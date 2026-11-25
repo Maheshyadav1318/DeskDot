@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>DeskDot</RootNamespace>
+    <AssemblyName>DeskDot</AssemblyName>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Product>DeskDot</Product>
+    <Company>D.R.M.Y.</Company>
+    <Authors>D.R.M.Y.</Authors>
+    <Description>DeskDot — a Dynamic Island-inspired productivity overlay for Windows 10 and Windows 11.</Description>
+    <Copyright>Copyright © D.R.M.Y.</Copyright>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <Platforms>x64;arm64</Platforms>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!--
+      WFAC010: the WinForms analyzer wants DPI configured through ApplicationHighDpiMode.
+      DeskDot is a WPF app, where per-monitor V2 DPI belongs in app.manifest — keep it there
+      and silence the WinForms-specific rule for our single NotifyIcon use.
+    -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DeskDot.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\app-icon.png" />
+    <Resource Include="Assets\album-art.jpg" />
+  </ItemGroup>
+
+</Project>

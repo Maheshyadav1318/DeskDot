@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Keep the GitHub Actions used by CI current (they are the only supply-chain input).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci
+    labels: [dependencies, ci]
+
+  # Test-only NuGet packages: the shipping app has no package references.
+  - package-ecosystem: nuget
+    directory: /tests/DeskDot.Tests
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: deps
+    labels: [dependencies, tests]
+    groups:
+      test-tooling:
+        patterns: ['*']

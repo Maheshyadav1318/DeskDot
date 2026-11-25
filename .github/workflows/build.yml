@@ -1,0 +1,195 @@
+name: Build DeskDot
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Unit tests
+    # The tests only cover platform-neutral Core/Models logic, so they run on Linux:
+    # fast, cheap, and they gate the Windows builds below.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore tests/DeskDot.Tests/DeskDot.Tests.csproj
+
+      - name: Test
+        run: >
+          dotnet test tests/DeskDot.Tests/DeskDot.Tests.csproj
+          -c Release --no-restore
+          --logger "console;verbosity=normal"
+          --logger "trx;LogFileName=results.trx"
+          --results-directory TestResults
+
+      # Surface failing assertions as check annotations so they are visible in the PR
+      # without digging through logs.
+      - name: Report failures
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          ns = {'t': 'http://microsoft.com/schemas/VisualStudio/TeamTest/2010'}
+          files = glob.glob('TestResults/**/*.trx', recursive=True)
+          if not files:
+              print('::error::No TRX results were produced — the test run failed before executing.')
+              raise SystemExit(0)
+          for path in files:
+              root = ET.parse(path).getroot()
+              counters = root.find('.//t:ResultSummary/t:Counters', ns)
+              if counters is not None:
+                  a = counters.attrib
+                  print(f"::notice::Tests: total {a.get('total')}, passed {a.get('passed')}, failed {a.get('failed')}")
+              for res in root.iter('{http://microsoft.com/schemas/VisualStudio/TeamTest/2010}UnitTestResult'):
+                  if res.get('outcome') == 'Passed':
+                      continue
+                  msg = res.find('.//t:Message', ns)
+                  text = (msg.text or '').strip().splitlines() if msg is not None else ['no message']
+                  headline = ' '.join(line.strip() for line in text[:3])[:400]
+                  name = res.get('testName', 'unknown')
+                  print(f"::error title={name}::{headline}")
+          PY
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-results
+          path: TestResults
+          if-no-files-found: ignore
+          retention-days: 7
+
+  build:
+    name: Build (${{ matrix.rid }})
+    needs: test
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            platform: x64
+          - rid: win-arm64
+            platform: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore DeskDot.sln
+
+      - name: Build
+        shell: pwsh
+        run: |
+          # Treat warnings as errors, and make sure any that appear are printed with
+          # file/line detail instead of vanishing into the build log.
+          $output = dotnet build src/DeskDot/DeskDot.csproj -c Release --no-restore `
+            -p:Platform=${{ matrix.platform }} -p:Version=1.0.0 -warnaserror 2>&1
+          $exit = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          ($output | Select-String -Pattern 'warning|error' -SimpleMatch:$false) |
+            Select-Object -First 40 |
+            ForEach-Object { Write-Host "::error::$($_.Line.Trim())" }
+          exit $exit
+
+      - name: Publish self-contained
+        run: >
+          dotnet publish src/DeskDot/DeskDot.csproj -c Release -r ${{ matrix.rid }}
+          --self-contained true -p:PublishSingleFile=false -p:Version=1.0.0
+          -o publish/${{ matrix.rid }}
+
+      - name: Remove debug symbols
+        shell: pwsh
+        run: Get-ChildItem publish/${{ matrix.rid }} -Filter *.pdb -Recurse | Remove-Item -Force
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: DeskDot-${{ matrix.rid }}
+          path: publish/${{ matrix.rid }}
+          if-no-files-found: error
+          retention-days: 14
+
+  installer:
+    name: Installer
+    needs: build
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download x64 build
+        uses: actions/download-artifact@v5
+        with:
+          name: DeskDot-win-x64
+          path: publish/win-x64
+
+      - name: Download arm64 build
+        uses: actions/download-artifact@v5
+        with:
+          name: DeskDot-win-arm64
+          path: publish/win-arm64
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $v = $env:GITHUB_REF -replace '^refs/tags/v', ''
+          } else {
+            $v = '1.0.0'
+          }
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Install Inno Setup
+        run: choco install innosetup --yes --no-progress
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer/DeskDot.iss "/DAppVersion=${{ steps.version.outputs.version }}"
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v5
+        with:
+          name: DeskDot-installer
+          path: dist/*.exe
+          if-no-files-found: error
+
+      - name: Attach assets to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.exe
+          generate_release_notes: true

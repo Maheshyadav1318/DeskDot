@@ -1,0 +1,11 @@
+{
+  "ToggleHotkey": "Alt+Space",
+  "CollapseOnFocusLoss": true,
+  "AlwaysOnTop": true,
+  "StartWithWindows": false,
+  "StatsIntervalMs": 4000,
+  "FocusMinutes": 25,
+  "DisplayName": "",
+  "IslandLeft": null,
+  "IslandTop": null
+}

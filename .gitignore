@@ -1,0 +1,21 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.user
+
+# .NET build output
+bin/
+obj/
+publish/
+dist/
+TestResults/
+*.binlog
+
+# Installer scratch
+installer/Output/
