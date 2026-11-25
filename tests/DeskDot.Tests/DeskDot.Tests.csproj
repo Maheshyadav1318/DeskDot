@@ -23,6 +23,10 @@
          project platform-neutral and avoids pulling WPF/WinForms onto Linux. -->
     <Compile Include="..\..\src\DeskDot\Core\**\*.cs" LinkBase="Core" />
     <Compile Include="..\..\src\DeskDot\Models\IslandModels.cs" LinkBase="Models" />
+    <!-- These two services are deliberately platform-neutral (file IO + JSON only), so they
+         can be exercised on Linux. Everything else in Services/ touches Win32/WPF. -->
+    <Compile Include="..\..\src\DeskDot\Services\AgendaService.cs" LinkBase="Services" />
+    <Compile Include="..\..\src\DeskDot\Services\SettingsService.cs" LinkBase="Services" />
   </ItemGroup>
 
 </Project>
