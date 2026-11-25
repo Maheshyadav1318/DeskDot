@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using DeskDot.Core;
 using DeskDot.Models;
 using DeskDot.Services;
 
@@ -107,23 +108,7 @@ public sealed class IslandViewModel : INotifyPropertyChanged, IDisposable
 
     public string DateText => DateTime.Now.ToString("ddd, MMM d", Culture);
 
-    public string Greeting
-    {
-        get
-        {
-            var hour = DateTime.Now.Hour;
-            var name = string.IsNullOrWhiteSpace(_settings.DisplayName) ? string.Empty : $", {_settings.DisplayName}";
-
-            return hour switch
-            {
-                < 5 => $"Still up{name}? Take it easy. 🌙",
-                < 12 => $"Good morning{name}! ✨",
-                < 17 => $"Have a wonderful day{name}! ✨",
-                < 21 => $"Good evening{name}! 🌇",
-                _ => $"Winding down{name}. 🌙"
-            };
-        }
-    }
+    public string Greeting => GreetingRules.ForHour(DateTime.Now.Hour, _settings.DisplayName);
 
     public string HotkeyHint => _settings.ToggleHotkey;
 

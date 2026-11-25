@@ -4,6 +4,8 @@ VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeskDot", "src\DeskDot\DeskDot.csproj", "{4E1F3A6C-9B2D-4D31-9C7A-2A5F6F1B7C11}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeskDot.Tests", "tests\DeskDot.Tests\DeskDot.Tests.csproj", "{B2D4E6F8-1A3C-4B5D-8E9F-0A1B2C3D4E5F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -20,6 +22,14 @@ Global
 		{4E1F3A6C-9B2D-4D31-9C7A-2A5F6F1B7C11}.Release|x64.Build.0 = Release|x64
 		{4E1F3A6C-9B2D-4D31-9C7A-2A5F6F1B7C11}.Release|arm64.ActiveCfg = Release|arm64
 		{4E1F3A6C-9B2D-4D31-9C7A-2A5F6F1B7C11}.Release|arm64.Build.0 = Release|arm64
+		{B2D4E6F8-1A3C-4B5D-8E9F-0A1B2C3D4E5F}.Debug|x64.ActiveCfg = Debug|x64
+		{B2D4E6F8-1A3C-4B5D-8E9F-0A1B2C3D4E5F}.Debug|x64.Build.0 = Debug|x64
+		{B2D4E6F8-1A3C-4B5D-8E9F-0A1B2C3D4E5F}.Debug|arm64.ActiveCfg = Debug|arm64
+		{B2D4E6F8-1A3C-4B5D-8E9F-0A1B2C3D4E5F}.Debug|arm64.Build.0 = Debug|arm64
+		{B2D4E6F8-1A3C-4B5D-8E9F-0A1B2C3D4E5F}.Release|x64.ActiveCfg = Release|x64
+		{B2D4E6F8-1A3C-4B5D-8E9F-0A1B2C3D4E5F}.Release|x64.Build.0 = Release|x64
+		{B2D4E6F8-1A3C-4B5D-8E9F-0A1B2C3D4E5F}.Release|arm64.ActiveCfg = Release|arm64
+		{B2D4E6F8-1A3C-4B5D-8E9F-0A1B2C3D4E5F}.Release|arm64.Build.0 = Release|arm64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

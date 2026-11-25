@@ -1,3 +1,5 @@
+using DeskDot.Core;
+
 namespace DeskDot.Services;
 
 /// <summary>Pomodoro-style focus countdown driving the island's focus card.</summary>
@@ -9,7 +11,7 @@ public sealed class FocusTimerService : IDisposable
 
     public FocusTimerService(int minutes)
     {
-        Total = TimeSpan.FromMinutes(Math.Clamp(minutes, 1, 180));
+        Total = FocusClock.ClampDuration(minutes);
         _remaining = Total;
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += OnTick;
@@ -30,7 +32,7 @@ public sealed class FocusTimerService : IDisposable
 
     public void SetDuration(int minutes)
     {
-        Total = TimeSpan.FromMinutes(Math.Clamp(minutes, 1, 180));
+        Total = FocusClock.ClampDuration(minutes);
         Reset();
     }
 
@@ -103,13 +105,9 @@ public sealed class FocusTimerService : IDisposable
 /// <summary>Snapshot of the focus countdown.</summary>
 public sealed record FocusState(TimeSpan Remaining, TimeSpan Total, bool IsRunning)
 {
-    public double RemainingPercent =>
-        Total.TotalSeconds <= 0 ? 0 : Math.Clamp(Remaining.TotalSeconds / Total.TotalSeconds * 100, 0, 100);
+    public double RemainingPercent => FocusClock.RemainingPercent(Remaining, Total);
 
-    public string Display =>
-        Remaining <= TimeSpan.Zero
-            ? "00:00"
-            : $"{(int)Remaining.TotalMinutes:00}:{Remaining.Seconds:00}";
+    public string Display => FocusClock.Format(Remaining);
 
     public string PrimaryActionLabel => IsRunning ? "Pause" : "Start";
 }

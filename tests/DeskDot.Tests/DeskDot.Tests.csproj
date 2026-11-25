@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Plain net8.0 on purpose: the tests only touch DeskDot's pure Core/Models logic,
+         so they run on the Linux CI runner as well as on Windows. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>DeskDot.Tests</RootNamespace>
+    <AssemblyName>DeskDot.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Link the pure sources instead of referencing the WPF app: keeps the test
+         project platform-neutral and avoids pulling WPF/WinForms onto Linux. -->
+    <Compile Include="..\..\src\DeskDot\Core\**\*.cs" LinkBase="Core" />
+    <Compile Include="..\..\src\DeskDot\Models\IslandModels.cs" LinkBase="Models" />
+  </ItemGroup>
+
+</Project>

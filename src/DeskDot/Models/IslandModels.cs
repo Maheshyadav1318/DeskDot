@@ -1,3 +1,5 @@
+using DeskDot.Core;
+
 namespace DeskDot.Models;
 
 /// <summary>A single media item surfaced in the island's now-playing card.</summary>
@@ -13,13 +15,11 @@ public sealed record SystemSnapshot(double CpuPercent, double UsedMemoryGb, doub
 {
     public static readonly SystemSnapshot Empty = new(0, 0, 0);
 
-    public double MemoryPercent => TotalMemoryGb <= 0 ? 0 : UsedMemoryGb / TotalMemoryGb * 100.0;
+    public double MemoryPercent => SystemFormat.MemoryPercent(UsedMemoryGb, TotalMemoryGb);
 
-    public string CpuText => $"{CpuPercent:0}%";
+    public string CpuText => SystemFormat.Cpu(CpuPercent);
 
-    public string MemoryText => UsedMemoryGb >= 10
-        ? $"{UsedMemoryGb:0}G"
-        : $"{UsedMemoryGb:0.0}G";
+    public string MemoryText => SystemFormat.Memory(UsedMemoryGb);
 }
 
 /// <summary>An upcoming calendar-style item shown under the clock.</summary>

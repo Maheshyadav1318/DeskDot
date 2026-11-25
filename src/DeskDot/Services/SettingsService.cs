@@ -1,26 +1,40 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using DeskDot.Models;
 
 namespace DeskDot.Services;
 
-/// <summary>Loads and saves <see cref="AppSettings"/> as JSON under %APPDATA%\DeskDot.</summary>
+/// <summary>
+/// Loads and saves <see cref="AppSettings"/> as JSON under <c>%APPDATA%\DeskDot</c>.
+/// Writes are atomic (temp file + replace) and failures never propagate: a damaged or
+/// read-only settings file must not stop the overlay from starting.
+/// </summary>
 public sealed class SettingsService
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
+    internal static readonly JsonSerializerOptions SerializerOptions = new()
     {
         WriteIndented = true,
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true
     };
 
     private readonly string _directory;
     private readonly string _path;
 
     public SettingsService()
-    {
-        _directory = Path.Combine(
+        : this(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "DeskDot");
+            "DeskDot"))
+    {
+    }
+
+    /// <summary>Test seam: store settings in any directory.</summary>
+    public SettingsService(string directory)
+    {
+        _directory = directory ?? throw new ArgumentNullException(nameof(directory));
         _path = Path.Combine(_directory, "settings.json");
     }
 
@@ -36,18 +50,23 @@ public sealed class SettingsService
             }
 
             var json = File.ReadAllText(_path);
-            var settings = JsonSerializer.Deserialize<AppSettings>(json, SerializerOptions);
-            return settings ?? new AppSettings();
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return new AppSettings();
+            }
+
+            return JsonSerializer.Deserialize<AppSettings>(json, SerializerOptions) ?? new AppSettings();
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
-            // A damaged settings file must never keep the overlay from starting.
             return new AppSettings();
         }
     }
 
-    public void Save(AppSettings settings)
+    public bool Save(AppSettings settings)
     {
+        ArgumentNullException.ThrowIfNull(settings);
+
         try
         {
             Directory.CreateDirectory(_directory);
@@ -57,10 +76,11 @@ public sealed class SettingsService
             var temp = _path + ".tmp";
             File.WriteAllText(temp, json);
             File.Move(temp, _path, overwrite: true);
+            return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // Saving is best effort; keep running with in-memory settings.
+            return false;
         }
     }
 }

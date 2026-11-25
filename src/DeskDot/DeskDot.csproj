@@ -29,6 +29,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="DeskDot.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Assets\app-icon.png" />
     <Resource Include="Assets\album-art.jpg" />
   </ItemGroup>

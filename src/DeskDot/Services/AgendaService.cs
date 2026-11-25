@@ -1,70 +1,43 @@
-using System.Globalization;
 using System.IO;
+using DeskDot.Core;
 using DeskDot.Models;
 
 namespace DeskDot.Services;
 
 /// <summary>
-/// Supplies the "Next · HH:mm" card. Reads %APPDATA%\DeskDot\agenda.txt when present
-/// (one "HH:mm Title" entry per line) and otherwise falls back to a short demo agenda,
-/// so the island is never empty on a fresh install.
+/// Supplies the "Next · HH:mm" card. Reads <c>%APPDATA%\DeskDot\agenda.txt</c> when present
+/// and otherwise falls back to the bundled demo agenda, so the island is never empty.
+/// Parsing and selection live in <see cref="AgendaPlanner"/> (pure and unit tested).
 /// </summary>
 public sealed class AgendaService
 {
-    private static readonly AgendaItem[] DemoAgenda =
-    {
-        new("09:30", "Stand-up & inbox triage"),
-        new("11:00", "Deep work block — DeskDot polish"),
-        new("14:00", "Test sleep/resume & hotkey re-registration"),
-        new("16:30", "Review pull requests"),
-        new("18:00", "Ship notes & wrap up ✨")
-    };
-
     private readonly string _agendaPath;
 
     public AgendaService()
-    {
-        _agendaPath = Path.Combine(
+        : this(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "DeskDot",
-            "agenda.txt");
+            "agenda.txt"))
+    {
+    }
+
+    /// <summary>Test seam: point the service at any file path.</summary>
+    public AgendaService(string agendaPath)
+    {
+        _agendaPath = agendaPath ?? throw new ArgumentNullException(nameof(agendaPath));
     }
 
     public string AgendaPath => _agendaPath;
 
-    public AgendaItem GetNext(DateTime now)
+    public AgendaItem GetNext(DateTime now) => GetNext(TimeOnly.FromDateTime(now));
+
+    public AgendaItem GetNext(TimeOnly now)
     {
-        var items = LoadUserAgenda() ?? DemoAgenda.ToList();
-
-        var timed = new List<(AgendaItem Item, TimeSpan Time)>();
-        foreach (var item in items)
-        {
-            if (ParseTime(item.Time) is { } time)
-            {
-                timed.Add((item, time));
-            }
-        }
-
-        if (timed.Count == 0)
-        {
-            return AgendaItem.None;
-        }
-
-        timed.Sort((a, b) => a.Time.CompareTo(b.Time));
-
-        foreach (var entry in timed)
-        {
-            if (entry.Time >= now.TimeOfDay)
-            {
-                return entry.Item;
-            }
-        }
-
-        // Past everything on the list: show tomorrow's first item.
-        return timed[0].Item;
+        var userAgenda = TryLoadUserAgenda();
+        return AgendaPlanner.Next(userAgenda ?? AgendaPlanner.DemoAgenda, now);
     }
 
-    private List<AgendaItem>? LoadUserAgenda()
+    private IReadOnlyList<AgendaItem>? TryLoadUserAgenda()
     {
         try
         {
@@ -73,52 +46,12 @@ public sealed class AgendaService
                 return null;
             }
 
-            var items = new List<AgendaItem>();
-            foreach (var raw in File.ReadAllLines(_agendaPath))
-            {
-                var line = raw.Trim();
-                if (line.Length == 0 || line.StartsWith('#'))
-                {
-                    continue;
-                }
-
-                var split = line.IndexOf(' ');
-                if (split <= 0)
-                {
-                    continue;
-                }
-
-                var time = line[..split];
-                var title = line[(split + 1)..].Trim();
-                if (title.Length == 0)
-                {
-                    continue;
-                }
-
-                items.Add(new AgendaItem(time, title));
-            }
-
+            var items = AgendaPlanner.Parse(File.ReadLines(_agendaPath));
             return items.Count > 0 ? items : null;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return null;
+            return null; // unreadable agenda: fall back to the demo list
         }
-    }
-
-    private static TimeSpan? ParseTime(string text)
-    {
-        if (TimeSpan.TryParseExact(text, @"hh\:mm", CultureInfo.InvariantCulture, out var shortTime) ||
-            TimeSpan.TryParse(text, CultureInfo.InvariantCulture, out shortTime))
-        {
-            return shortTime;
-        }
-
-        if (DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
-        {
-            return parsed.TimeOfDay;
-        }
-
-        return null;
     }
 }
