@@ -40,4 +40,3 @@
   rounded-corner and dark-mode attributes are silently ignored on Windows 10.
 - The app is unsigned. SmartScreen will warn on first run until a code-signing
   certificate is added to the release pipeline.
-- The browser demo in `docs/demo/` is a design reference, not the shipping app.

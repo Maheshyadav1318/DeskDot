@@ -21,9 +21,10 @@ Designed &amp; Developed by **D.R.M.Y.** ✨
 
 Grab the latest installer from **[Releases](https://github.com/Maheshyadav1318/DeskDot/releases)**:
 
-> **Status: v1.0.0 source is complete; binaries are produced by CI.** No release has been
-> published yet. Push a `v1.0.0` tag (see *Build from source*) and GitHub Actions attaches
-> the installer and both portable zips to the release automatically.
+> **Status: v1.0.0 builds and packages in CI.** The `Build DeskDot` workflow compiles
+> `win-x64` and `win-arm64` and produces the Inno Setup installer; no GitHub Release has
+> been published yet. Push a `v1.0.0` tag (see *Build from source*) and the installer plus
+> both portable zips are attached to the release automatically.
 
 | File | Notes |
 | --- | --- |
@@ -40,7 +41,7 @@ Requires **Windows 10 1809 (build 17763) or newer**. First run may show a SmartS
 | WPF overlay, morph, drag, hotkey, tray, single instance | Done |
 | Live CPU / memory, focus timer, agenda card | Done |
 | Media card | Demo playlist (system-player mirroring scheduled for v1.1) |
-| Installer + CI (x64, arm64, release attachments) | Done, needs a Windows run to produce binaries |
+| Installer + CI (x64, arm64, release attachments) | Verified: both archs build and the installer compiles in CI |
 | Code signing / auto-update | Not yet |
 
 ## What it does
@@ -102,7 +103,6 @@ src/DeskDot/                WPF application (.NET 8, no NuGet packages)
   Assets/                   Icon (png + ico) and album art
 installer/DeskDot.iss       Inno Setup script
 scripts/build.ps1           Build / publish / installer helper
-docs/demo/                  Browser design reference (static HTML/CSS/JS)
 docs/ROADMAP.md             What's shipped and what's next
 ```
 
@@ -123,16 +123,6 @@ Settings live in `%APPDATA%\DeskDot\settings.json` and can be edited from the UI
 ```
 
 Crashes are appended to `%APPDATA%\DeskDot\crash.log`.
-
-## Design reference
-
-`docs/demo/index.html` is a static browser recreation of the island used to settle the visual design before porting to WPF. Open it directly, or serve it:
-
-```bash
-python -m http.server 8080 --directory docs/demo
-```
-
-It is a mock — the real application is the WPF build in `src/DeskDot`.
 
 ## Roadmap
 
