@@ -25,7 +25,12 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!--
+      WFAC010: the WinForms analyzer wants DPI configured through ApplicationHighDpiMode.
+      DeskDot is a WPF app, where per-monitor V2 DPI belongs in app.manifest — keep it there
+      and silence the WinForms-specific rule for our single NotifyIcon use.
+    -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
