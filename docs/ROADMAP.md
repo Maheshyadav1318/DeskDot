@@ -15,7 +15,8 @@
 - Single-instance; a second launch toggles the running island
 - Sleep/resume and session-unlock handling: hotkey re-registration and timer restart
 - Start with Windows (HKCU Run entry)
-- Settings dialog persisted to `%APPDATA%\DeskDot\settings.json`
+- Settings dialog persisted to `%APPDATA%\DeskDot\settings.json` (atomic write, corrupt-file recovery)
+- Pure logic isolated in `src/DeskDot/Core` with an 89-case xUnit suite gating CI
 
 ## v1.1 — next
 
@@ -33,6 +34,13 @@
 - Plugin manifests so features can be toggled per user
 - Auto-update channel (Velopack or a signed GitHub Releases feed)
 - MSIX packaging alongside the Inno Setup installer
+
+## Quality / tooling backlog
+
+- UI automation smoke test that launches the app on a Windows runner and asserts the pill renders
+- Coverage reporting (Coverlet) published to the CI summary
+- Signed releases (code-signing certificate) so SmartScreen stops warning
+- `docs/screenshots/` refresh whenever the island's look changes
 
 ## Known limitations
 

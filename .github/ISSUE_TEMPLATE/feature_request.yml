@@ -1,0 +1,52 @@
+name: Feature request
+description: Suggest a capability for the island
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation where DeskDot gets in your way or falls short.
+      placeholder: While I'm on a call I keep expanding the island to check the time, and it steals focus.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: What should the island do instead? Sketches or mock-ups welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      placeholder: Keep the pill always visible instead, or use a separate widget.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Island / window behaviour
+        - Clock and agenda
+        - Media card
+        - Focus timer
+        - System stats
+        - Settings and hotkeys
+        - Packaging / installer
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This keeps DeskDot dependency-free (no new NuGet packages)
+          required: false
+        - label: I checked docs/ROADMAP.md and this is not already planned
+          required: true
