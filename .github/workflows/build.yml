@@ -40,8 +40,38 @@ jobs:
       - name: Test
         run: >
           dotnet test tests/DeskDot.Tests/DeskDot.Tests.csproj
-          -c Release --no-restore --logger "console;verbosity=normal"
+          -c Release --no-restore
+          --logger "console;verbosity=normal"
+          --logger "trx;LogFileName=results.trx"
           --results-directory TestResults
+
+      # Surface failing assertions as check annotations so they are visible in the PR
+      # without digging through logs.
+      - name: Report failures
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          ns = {'t': 'http://microsoft.com/schemas/VisualStudio/TeamTest/2010'}
+          files = glob.glob('TestResults/**/*.trx', recursive=True)
+          if not files:
+              print('::error::No TRX results were produced — the test run failed before executing.')
+              raise SystemExit(0)
+          for path in files:
+              root = ET.parse(path).getroot()
+              counters = root.find('.//t:ResultSummary/t:Counters', ns)
+              if counters is not None:
+                  a = counters.attrib
+                  print(f"::notice::Tests: total {a.get('total')}, passed {a.get('passed')}, failed {a.get('failed')}")
+              for res in root.iter('{http://microsoft.com/schemas/VisualStudio/TeamTest/2010}UnitTestResult'):
+                  if res.get('outcome') == 'Passed':
+                      continue
+                  msg = res.find('.//t:Message', ns)
+                  text = (msg.text or '').strip().splitlines() if msg is not None else ['no message']
+                  headline = ' '.join(line.strip() for line in text[:3])[:400]
+                  name = res.get('testName', 'unknown')
+                  print(f"::error title={name}::{headline}")
+          PY
 
       - name: Upload test results
         if: always()
