@@ -137,6 +137,22 @@ jobs:
         shell: pwsh
         run: Get-ChildItem publish/${{ matrix.rid }} -Filter *.pdb -Recurse | Remove-Item -Force
 
+      # Portable build: the README advertises zips as release assets, so produce them here
+      # rather than only as workflow artifacts.
+      - name: Create portable zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path publish/${{ matrix.rid }}/* -DestinationPath dist/DeskDot-${{ matrix.rid }}.zip -CompressionLevel Optimal
+
+      - name: Upload portable zip
+        uses: actions/upload-artifact@v5
+        with:
+          name: DeskDot-zip-${{ matrix.rid }}
+          path: dist/DeskDot-${{ matrix.rid }}.zip
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v5
         with:
@@ -166,6 +182,13 @@ jobs:
         with:
           name: DeskDot-win-arm64
           path: publish/win-arm64
+
+      - name: Download portable zips
+        uses: actions/download-artifact@v5
+        with:
+          pattern: DeskDot-zip-*
+          path: dist
+          merge-multiple: true
 
       - name: Resolve version
         id: version
@@ -197,6 +220,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.exe
+          files: |
+            dist/*.exe
+            dist/*.zip
           generate_release_notes: true
           fail_on_unmatched_files: true
