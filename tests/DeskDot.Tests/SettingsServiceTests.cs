@@ -124,6 +124,31 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
+    public void Default_settings_serialize_without_throwing()
+    {
+        // Regression: IslandLeft/Top used to default to double.NaN, which System.Text.Json
+        // refuses to write — saving settings failed silently and nothing was persisted.
+        var json = JsonSerializer.Serialize(new AppSettings(), SettingsService.SerializerOptions);
+
+        Assert.DoesNotContain("NaN", json);
+        Assert.DoesNotContain("Infinity", json);
+    }
+
+    [Fact]
+    public void Position_round_trips_and_defaults_to_null()
+    {
+        var service = new SettingsService(_dir);
+
+        Assert.Null(service.Load().IslandLeft);
+
+        Assert.True(service.Save(new AppSettings { IslandLeft = 120.5, IslandTop = 40 }));
+        var loaded = service.Load();
+
+        Assert.Equal(120.5, loaded.IslandLeft);
+        Assert.Equal(40, loaded.IslandTop);
+    }
+
+    [Fact]
     public void Serializer_options_are_stable()
     {
         // Guards against accidentally enabling a naming policy that would break

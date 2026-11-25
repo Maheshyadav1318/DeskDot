@@ -144,8 +144,8 @@ public partial class MainWindow : Window
     private void RestorePosition()
     {
         var workArea = SystemParameters.WorkArea;
-        var left = double.IsNaN(_settings.IslandLeft) ? workArea.Left + (workArea.Width - Width) / 2 : _settings.IslandLeft;
-        var top = double.IsNaN(_settings.IslandTop) ? workArea.Top + 12 : _settings.IslandTop;
+        var left = _settings.IslandLeft ?? workArea.Left + (workArea.Width - Width) / 2;
+        var top = _settings.IslandTop ?? workArea.Top + 12;
 
         left = Math.Clamp(left, workArea.Left - Width / 2, workArea.Right - Width / 2);
         top = Math.Clamp(top, workArea.Top - Height, workArea.Bottom - Height);

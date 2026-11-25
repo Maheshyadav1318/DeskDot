@@ -26,10 +26,14 @@ public sealed class AppSettings
     /// <summary>Windows account name shown in the greeting.</summary>
     public string DisplayName { get; set; } = string.Empty;
 
-    /// <summary>Last restored screen position (device independent pixels, top-left).</summary>
-    public double IslandLeft { get; set; } = double.NaN;
+    /// <summary>
+    /// Last island position in device independent pixels (top-left), or <c>null</c> when the
+    /// user has not moved it yet (the island then centres itself on the primary monitor).
+    /// Nullable rather than NaN because NaN is not valid JSON.
+    /// </summary>
+    public double? IslandLeft { get; set; }
 
-    public double IslandTop { get; set; } = double.NaN;
+    public double? IslandTop { get; set; }
 
     [JsonIgnore]
     public double SessionLengthSeconds => Math.Max(1, FocusMinutes) * 60.0;
