@@ -108,9 +108,18 @@ jobs:
         run: dotnet restore DeskDot.sln
 
       - name: Build
-        run: >
-          dotnet build src/DeskDot/DeskDot.csproj -c Release --no-restore
-          -p:Platform=${{ matrix.platform }} -p:Version=1.0.0 -warnaserror
+        shell: pwsh
+        run: |
+          # Treat warnings as errors, and make sure any that appear are printed with
+          # file/line detail instead of vanishing into the build log.
+          $output = dotnet build src/DeskDot/DeskDot.csproj -c Release --no-restore `
+            -p:Platform=${{ matrix.platform }} -p:Version=1.0.0 -warnaserror 2>&1
+          $exit = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          ($output | Select-String -Pattern 'warning|error' -SimpleMatch:$false) |
+            Select-Object -First 40 |
+            ForEach-Object { Write-Host "::error::$($_.Line.Trim())" }
+          exit $exit
 
       - name: Publish self-contained
         run: >
