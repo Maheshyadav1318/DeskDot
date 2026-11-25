@@ -14,7 +14,6 @@ public sealed class SystemStatsService : IDisposable
     private ulong _lastKernel;
     private ulong _lastUser;
     private bool _hasPreviousSample;
-    private bool _disposed;
 
     public SystemStatsService()
     {
@@ -87,5 +86,8 @@ public sealed class SystemStatsService : IDisposable
     private static ulong ToUInt64(NativeMethods.FileTime time) =>
         ((ulong)time.HighDateTime << 32) | time.LowDateTime;
 
-    public void Dispose() => _disposed = true;
+    public void Dispose()
+    {
+        // No unmanaged state is held; kept for symmetry with the other services.
+    }
 }
