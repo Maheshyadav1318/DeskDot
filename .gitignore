@@ -7,10 +7,15 @@ desktop.ini
 .vscode/
 .idea/
 *.swp
+*.user
 
-# Build output
+# .NET build output
 bin/
 obj/
+publish/
 dist/
-build/
-*.user
+TestResults/
+*.binlog
+
+# Installer scratch
+installer/Output/

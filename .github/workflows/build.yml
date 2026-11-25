@@ -1,0 +1,118 @@
+name: Build DeskDot
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.rid }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            platform: x64
+          - rid: win-arm64
+            platform: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore DeskDot.sln
+
+      - name: Build
+        run: >
+          dotnet build DeskDot.sln -c Release --no-restore
+          -p:Platform=${{ matrix.platform }} -p:Version=1.0.0
+
+      - name: Publish self-contained
+        run: >
+          dotnet publish src/DeskDot/DeskDot.csproj -c Release -r ${{ matrix.rid }}
+          --self-contained true -p:PublishSingleFile=false -p:Version=1.0.0
+          -o publish/${{ matrix.rid }}
+
+      - name: Remove debug symbols
+        shell: pwsh
+        run: Get-ChildItem publish/${{ matrix.rid }} -Filter *.pdb -Recurse | Remove-Item -Force
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeskDot-${{ matrix.rid }}
+          path: publish/${{ matrix.rid }}
+          if-no-files-found: error
+          retention-days: 14
+
+  installer:
+    name: Installer
+    needs: build
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download x64 build
+        uses: actions/download-artifact@v4
+        with:
+          name: DeskDot-win-x64
+          path: publish/win-x64
+
+      - name: Download arm64 build
+        uses: actions/download-artifact@v4
+        with:
+          name: DeskDot-win-arm64
+          path: publish/win-arm64
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $v = $env:GITHUB_REF -replace '^refs/tags/v', ''
+          } else {
+            $v = '1.0.0'
+          }
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Install Inno Setup
+        run: choco install innosetup --yes --no-progress
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer/DeskDot.iss "/DAppVersion=${{ steps.version.outputs.version }}"
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeskDot-installer
+          path: dist/*.exe
+          if-no-files-found: error
+
+      - name: Attach assets to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.exe
+          generate_release_notes: true
