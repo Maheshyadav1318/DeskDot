@@ -58,11 +58,11 @@ public partial class MainWindow : Window
         _toggleHotkey = new HotkeyService(_source, ToggleWindow);
         _toggleHotkey.Register(_settings.ToggleHotkey);
 
-        _settingsHotkey = new HotkeyService(_source, ShowSettings, id: 0xD0D1);
+        _settingsHotkey = new HotkeyService(_source, () => ShowSettings(), hotkeyId: 0xD0D1);
         _settingsHotkey.Register(_settings.SettingsHotkey);
 
         _power = new PowerNotificationService(_source, OnSystemResumed);
-        _tray = new TrayService(ShowSettings, ShowWindow, RequestExit);
+        _tray = new TrayService(() => ShowSettings(), ShowWindow, RequestExit);
 
         if (_settings.StartWithWindows != StartupService.IsEnabled())
         {

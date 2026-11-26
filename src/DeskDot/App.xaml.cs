@@ -69,7 +69,7 @@ public partial class App : Application
         _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
         _showWait = ThreadPool.RegisterWaitForSingleObject(
             _showEvent,
-            (_, _) => Dispatcher.BeginInvoke(() => _mainWindow?.ToggleIsland()),
+            (_, _) => Dispatcher.BeginInvoke(() => _mainWindow?.ToggleWindow()),
             state: null,
             Timeout.Infinite,
             executeOnlyOnce: false);
