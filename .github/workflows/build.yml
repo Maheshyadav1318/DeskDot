@@ -81,7 +81,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: TestResults
@@ -146,7 +146,7 @@ jobs:
           Compress-Archive -Path publish/${{ matrix.rid }}/* -DestinationPath dist/DeskDot-${{ matrix.rid }}.zip -CompressionLevel Optimal
 
       - name: Upload portable zip
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: DeskDot-zip-${{ matrix.rid }}
           path: dist/DeskDot-${{ matrix.rid }}.zip
@@ -154,7 +154,7 @@ jobs:
           retention-days: 14
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: DeskDot-${{ matrix.rid }}
           path: publish/${{ matrix.rid }}
@@ -211,7 +211,7 @@ jobs:
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer/DeskDot.iss "/DAppVersion=${{ steps.version.outputs.version }}"
 
       - name: Upload installer
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: DeskDot-installer
           path: dist/*.exe
