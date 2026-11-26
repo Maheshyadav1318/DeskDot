@@ -51,10 +51,10 @@ jobs:
           --logger "trx;LogFileName=results.trx"
           --results-directory TestResults
 
-      # Surface failing assertions as check annotations so they are visible in the PR
-      # without digging through logs.
-      - name: Report failures
-        if: failure()
+      # Always publish the totals as a check annotation, and surface each failing assertion
+      # individually so it is visible in the PR without digging through logs.
+      - name: Summarise tests
+        if: always()
         run: |
           python3 - <<'PY'
           import glob, xml.etree.ElementTree as ET
