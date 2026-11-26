@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in the island is broken or behaves unexpectedly
+description: Something in the dashboard is broken or behaves unexpectedly
 labels: [bug]
 body:
   - type: markdown
@@ -13,7 +13,7 @@ body:
     attributes:
       label: DeskDot version
       description: Shown in the installer name, or the tag you built from.
-      placeholder: "1.0.0"
+      placeholder: "2.0.0"
     validations:
       required: true
 
@@ -38,8 +38,8 @@ body:
     attributes:
       label: Steps to reproduce
       placeholder: |
-        1. Press Alt+Space
-        2. Click Focus → Start
+        1. Press Ctrl+Alt+D to show DeskDot
+        2. Click "Start focus"
         3. Lock the PC and sign back in
     validations:
       required: true

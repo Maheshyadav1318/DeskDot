@@ -159,6 +159,28 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
+    public void Module_keys_are_stable()
+    {
+        // These strings are persisted in settings.json. Renaming one would silently reset a
+        // user's module choices, so the set is pinned here on purpose.
+        var keys = ModuleInfo.All.Select(module => module.Key).ToArray();
+
+        Assert.Equal(
+            new[] { "Focus", "Weather", "System", "ScreenTime", "Clock", "Clipboard", "Notes", "Agenda" },
+            keys);
+        Assert.Equal(8, keys.Length);
+        Assert.Equal(keys.Length, keys.Distinct().Count());
+    }
+
+    [Fact]
+    public void Default_modules_exclude_the_private_ones()
+    {
+        Assert.DoesNotContain(DashboardModule.Clipboard, ModuleInfo.Defaults);
+        Assert.DoesNotContain(DashboardModule.ScreenTime, ModuleInfo.Defaults);
+        Assert.Contains(DashboardModule.Focus, ModuleInfo.Defaults);
+    }
+
+    [Fact]
     public void Privacy_sensitive_modules_are_off_by_default()
     {
         var settings = new AppSettings();

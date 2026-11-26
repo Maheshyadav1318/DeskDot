@@ -41,8 +41,7 @@
                    VerticalAlignment="Center" Margin="4,0,0,0" />
       </StackPanel>
 
-      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
-                  WindowChrome.IsHitTestVisibleInChrome="True">
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
         <Button Content="Customize" Style="{StaticResource GhostPill}" Click="OnOpenSettings"
                 Margin="0,0,8,0" ToolTip="Modules, weather, privacy" />
         <Button Content="Modules" Style="{StaticResource GhostPill}" Click="OnOpenModules" />
@@ -62,7 +61,7 @@
           </Grid.ColumnDefinitions>
 
           <!-- Focus -->
-          <Border Grid.Column="0" Style="{StaticResource Card}" Visibility="{Binding TimersVisible, Converter={StaticResource BoolToVis}}"
+          <Border Grid.Column="0" Style="{StaticResource Card}" Visibility="{Binding FocusVisible, Converter={StaticResource BoolToVis}}"
                   Background="{StaticResource SageSoftBrush}">
             <StackPanel>
               <TextBlock Text="A LITTLE FOCUS" Style="{StaticResource KickerText}" />
@@ -182,7 +181,8 @@
           </Border>
 
           <!-- Screen time -->
-          <Border Grid.Column="2" Style="{StaticResource Card}">
+          <Border Grid.Column="2" Style="{StaticResource Card}"
+                  Visibility="{Binding ScreenTimeVisible, Converter={StaticResource BoolToVis}}">
             <StackPanel>
               <Grid>
                 <TextBlock Text="SCREEN TIME" Style="{StaticResource KickerText}" />
@@ -207,10 +207,14 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                   <DataTemplate>
-                    <Grid Margin="0,0,6,0" Height="46" VerticalAlignment="Bottom">
-                      <ProgressBar Style="{StaticResource WeekBar}" VerticalAlignment="Bottom"
-                                   Value="{Binding Converter={StaticResource PercentToValue}}" />
-                    </Grid>
+                    <StackPanel Margin="0,0,6,0">
+                      <Grid Height="46" VerticalAlignment="Bottom">
+                        <ProgressBar Style="{StaticResource WeekBar}" VerticalAlignment="Bottom"
+                                     Value="{Binding Value, Converter={StaticResource PercentToValue}}" />
+                      </Grid>
+                      <TextBlock Text="{Binding Label}" Style="{StaticResource CardCaption}"
+                                 HorizontalAlignment="Center" FontSize="10" Margin="0,4,0,0" />
+                    </StackPanel>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
@@ -284,7 +288,7 @@
           </Grid.ColumnDefinitions>
 
           <Border Grid.Column="0" Style="{StaticResource Card}"
-                  Visibility="{Binding CalendarVisible, Converter={StaticResource BoolToVis}}">
+                  Visibility="{Binding AgendaVisible, Converter={StaticResource BoolToVis}}">
             <StackPanel>
               <Grid>
                 <TextBlock Text="UP NEXT" Style="{StaticResource KickerText}" />

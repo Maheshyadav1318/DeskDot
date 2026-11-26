@@ -30,20 +30,22 @@ The test project targets plain `net8.0` and only covers the platform-neutral log
 
 | Path | Purpose | Tests |
 | --- | --- | --- |
-| `src/DeskDot/Core` | Pure logic (agenda planning, hotkey parsing, focus clock, formatting) | Required |
+| `src/DeskDot/Core` | Pure logic (agenda parsing, hotkey gestures, focus clock, weather codes, clipboard rules, screen-time maths, formatting) | Required |
 | `src/DeskDot/Models` | Records and settings | Covered where pure |
-| `src/DeskDot/Services` | Win32/WPF services (stats, hotkey, tray, power, media) | Manual |
-| `src/DeskDot/ViewModels` | Bindable island state | Manual |
-| `src/DeskDot/Views`, `Themes` | XAML surfaces | Manual |
+| `src/DeskDot/Services` | Win32/WPF services (stats, hotkeys, tray, weather, clipboard, screen time, notes) | Manual |
+| `src/DeskDot/ViewModels` | `DashboardViewModel` — the single binding surface | Manual |
+| `src/DeskDot/Views`, `Themes` | XAML surfaces (`Light.xaml`, `DashboardControls.xaml`) | Manual |
 
 ## Coding conventions
 
 - Nullable reference types are **on**; implicit usings are **off** (WinForms globals would
   clash with WPF types such as `Application`, `KeyEventArgs`, `Color`). Add explicit usings.
 - Every service must degrade gracefully: a failure (no tray, no hotkey, unreadable settings)
-  must never stop the overlay from starting. Never let an exception escape a Win32 call site.
+  must never stop the dashboard from starting. Never let an exception escape a Win32 call site.
 - Dispose Win32/GDI handles you create; do not dispose shared system handles.
 - XAML: keep styles and brushes in `Themes/`; avoid hard-coded colours in views.
+- Privacy-relevant features are **opt-in by default** and must be documented in `SECURITY.md`
+  the same day they land.
 - No new NuGet packages without prior discussion in an issue.
 
 ## Before opening a pull request

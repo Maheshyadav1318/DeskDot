@@ -3,14 +3,14 @@ namespace DeskDot.Models;
 /// <summary>The eight modules advertised by the dashboard.</summary>
 public enum DashboardModule
 {
-    System,
-    Clock,
-    Timers,
-    Calendar,
+    Focus,
     Weather,
+    System,
+    ScreenTime,
+    Clock,
     Clipboard,
     Notes,
-    Soundtrack
+    Agenda
 }
 
 /// <summary>Metadata for one module row in the module manager.</summary>
@@ -20,26 +20,25 @@ public sealed record ModuleInfo(DashboardModule Id, string Name, string Descript
 
     public static IReadOnlyList<ModuleInfo> All { get; } = new[]
     {
+        new ModuleInfo(DashboardModule.Focus, "Focus", "A 25-minute timer with a quiet chime"),
+        new ModuleInfo(DashboardModule.Weather, "Weather", "Live conditions — your coordinates go to Open-Meteo"),
         new ModuleInfo(DashboardModule.System, "System", "CPU, memory and battery, live from this PC"),
+        new ModuleInfo(DashboardModule.ScreenTime, "Screen time", "Where the hours went today — off until you opt in", IsPrivate: true),
         new ModuleInfo(DashboardModule.Clock, "Clock", "Time, date and a gentle greeting"),
-        new ModuleInfo(DashboardModule.Timers, "Timers", "Focus sessions and short breaks"),
-        new ModuleInfo(DashboardModule.Calendar, "Calendar", "Up next from your agenda file"),
-        new ModuleInfo(DashboardModule.Weather, "Weather", "Live conditions — sends your city to Open-Meteo"),
-        new ModuleInfo(DashboardModule.Clipboard, "Clipboard", "Text you copy, kept on this device", IsPrivate: true),
-        new ModuleInfo(DashboardModule.Notes, "Notes", "Quick notes saved locally", IsPrivate: true),
-        new ModuleInfo(DashboardModule.Soundtrack, "Soundtrack", "A quiet now-playing card")
+        new ModuleInfo(DashboardModule.Clipboard, "Clipboard", "Text you copy, held in memory on this device", IsPrivate: true),
+        new ModuleInfo(DashboardModule.Notes, "Notes", "Quick notes saved locally to your PC"),
+        new ModuleInfo(DashboardModule.Agenda, "Agenda", "Up next, read from your agenda file")
     };
 
     /// <summary>Modules that work out of the box; the two private ones must be opted into.</summary>
     public static IReadOnlyList<DashboardModule> Defaults { get; } = new[]
     {
+        DashboardModule.Focus,
+        DashboardModule.Weather,
         DashboardModule.System,
         DashboardModule.Clock,
-        DashboardModule.Timers,
-        DashboardModule.Calendar,
-        DashboardModule.Weather,
         DashboardModule.Notes,
-        DashboardModule.Soundtrack
+        DashboardModule.Agenda
     };
 }
 

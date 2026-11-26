@@ -14,7 +14,7 @@
 - [ ] `dotnet build DeskDot.sln -c Release -p:Platform=x64 -warnaserror` is clean
 - [ ] Walked the relevant checks in `docs/TESTING.md` on Windows
 
-<!-- Paste anything useful: new test names, screenshots of the island, crash-log excerpts. -->
+<!-- Paste anything useful: new test names, screenshots of the dashboard, crash-log excerpts. -->
 
 ## Type
 

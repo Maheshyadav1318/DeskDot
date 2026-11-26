@@ -37,6 +37,10 @@ public partial class SettingsWindow : Window
     private readonly AppSettings _draft;
     private readonly List<ModuleToggle> _moduleToggles = new();
 
+    // Guards the two-way mirror between the Privacy checkboxes and the module list, so
+    // setting one from the other does not rebuild the list under the user's cursor.
+    private bool _syncingConsent;
+
     public SettingsWindow(AppSettings draft)
     {
         _draft = draft ?? throw new ArgumentNullException(nameof(draft));
@@ -93,7 +97,35 @@ public partial class SettingsWindow : Window
         MaskSensitiveCheck.IsChecked = _draft.MaskSensitiveClipboard;
         ScreenTimeCheck.IsChecked = _draft.ScreenTimeEnabled;
 
+        // The module list reads the consent flags, and the checkboxes are the same switch.
+        ClipboardCheck.Checked += OnPrivacyConsentChanged;
+        ClipboardCheck.Unchecked += OnPrivacyConsentChanged;
+        ScreenTimeCheck.Checked += OnPrivacyConsentChanged;
+        ScreenTimeCheck.Unchecked += OnPrivacyConsentChanged;
+
         BuildModuleList();
+    }
+
+    /// <summary>Mirrors a consent checkbox change into the module list immediately.</summary>
+    private void OnPrivacyConsentChanged(object sender, RoutedEventArgs e)
+    {
+        _draft.ClipboardHistoryEnabled = ClipboardCheck.IsChecked == true;
+        _draft.ScreenTimeEnabled = ScreenTimeCheck.IsChecked == true;
+
+        if (_syncingConsent)
+        {
+            return;
+        }
+
+        _syncingConsent = true;
+        try
+        {
+            BuildModuleList();
+        }
+        finally
+        {
+            _syncingConsent = false;
+        }
     }
 
     private static void EnsureSelected(ComboBox box, string value)
@@ -119,14 +151,46 @@ public partial class SettingsWindow : Window
             var isEnabled = info.Id switch
             {
                 DashboardModule.Clipboard => _draft.ClipboardHistoryEnabled,
+                DashboardModule.ScreenTime => _draft.ScreenTimeEnabled,
                 _ => enabled.Contains(info.Key)
             };
 
-            _moduleToggles.Add(new ModuleToggle(info, isEnabled));
+            var toggle = new ModuleToggle(info, isEnabled);
+            toggle.Toggled += OnModuleToggled;
+            _moduleToggles.Add(toggle);
         }
 
         ModulesList.ItemsSource = null;
         ModulesList.ItemsSource = _moduleToggles;
+    }
+
+    /// <summary>Keeps the Privacy tab honest when a private module is switched in the list.</summary>
+    private void OnModuleToggled(object? sender, EventArgs e)
+    {
+        if (sender is not ModuleToggle toggle)
+        {
+            return;
+        }
+
+        _syncingConsent = true;
+        try
+        {
+            switch (toggle.Info.Id)
+            {
+                case DashboardModule.Clipboard:
+                    ClipboardCheck.IsChecked = toggle.IsEnabled;
+                    _draft.ClipboardHistoryEnabled = toggle.IsEnabled;
+                    break;
+                case DashboardModule.ScreenTime:
+                    ScreenTimeCheck.IsChecked = toggle.IsEnabled;
+                    _draft.ScreenTimeEnabled = toggle.IsEnabled;
+                    break;
+            }
+        }
+        finally
+        {
+            _syncingConsent = false;
+        }
     }
 
     private void OnLookUpWeather(object sender, RoutedEventArgs e) =>
@@ -221,7 +285,7 @@ public partial class SettingsWindow : Window
         _draft.ScreenTimeEnabled = ScreenTimeCheck.IsChecked == true;
 
         _draft.EnabledModules = _moduleToggles
-            .Where(toggle => toggle.IsEnabled && toggle.Info.Id != DashboardModule.Clipboard)
+            .Where(toggle => toggle.IsEnabled)
             .Select(toggle => toggle.Info.Key)
             .ToList();
 
@@ -262,8 +326,12 @@ public partial class SettingsWindow : Window
 
                 _isEnabled = value;
                 PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IsEnabled)));
+                Toggled?.Invoke(this, EventArgs.Empty);
             }
         }
+
+        /// <summary>Lets the window mirror a private module back to its consent checkbox.</summary>
+        public event EventHandler? Toggled;
     }
 
     private sealed class GeocodeResponse

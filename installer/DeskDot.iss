@@ -1,5 +1,5 @@
 ; DeskDot installer — build with Inno Setup 6 (https://jrsoftware.org/isinfo.php)
-;   ISCC.exe installer\DeskDot.iss /DAppVersion=1.0.0
+;   ISCC.exe installer\DeskDot.iss /DAppVersion=2.0.0
 ; Expects a published, self-contained build in ..\publish\win-x64
 
 #define AppName        "DeskDot"
@@ -8,7 +8,7 @@
 #define AppUrl         "https://github.com/Maheshyadav1318/DeskDot"
 
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "2.0.0"
 #endif
 
 [Setup]

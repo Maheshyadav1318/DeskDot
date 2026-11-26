@@ -258,21 +258,21 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
     public bool IsEnabled(DashboardModule module) => _enabled.Contains(module);
 
-    public bool SystemVisible => IsEnabled(DashboardModule.System);
-
-    public bool ClockVisible => IsEnabled(DashboardModule.Clock);
-
-    public bool TimersVisible => IsEnabled(DashboardModule.Timers);
-
-    public bool CalendarVisible => IsEnabled(DashboardModule.Calendar);
+    public bool FocusVisible => IsEnabled(DashboardModule.Focus);
 
     public bool WeatherVisible => IsEnabled(DashboardModule.Weather);
+
+    public bool SystemVisible => IsEnabled(DashboardModule.System);
+
+    public bool ScreenTimeVisible => IsEnabled(DashboardModule.ScreenTime);
+
+    public bool ClockVisible => IsEnabled(DashboardModule.Clock);
 
     public bool ClipboardVisible => IsEnabled(DashboardModule.Clipboard);
 
     public bool NotesVisible => IsEnabled(DashboardModule.Notes);
 
-    public bool SoundtrackVisible => IsEnabled(DashboardModule.Soundtrack);
+    public bool AgendaVisible => IsEnabled(DashboardModule.Agenda);
 
     public string EnabledModuleCount => $"{_enabled.Count} little helpers, enabled";
 
@@ -298,21 +298,37 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
             Modules.Add(info);
         }
 
-        Raise(nameof(SystemVisible));
-        Raise(nameof(ClockVisible));
-        Raise(nameof(TimersVisible));
-        Raise(nameof(CalendarVisible));
+        Raise(nameof(FocusVisible));
         Raise(nameof(WeatherVisible));
+        Raise(nameof(SystemVisible));
+        Raise(nameof(ScreenTimeVisible));
+        Raise(nameof(ClockVisible));
         Raise(nameof(ClipboardVisible));
         Raise(nameof(NotesVisible));
-        Raise(nameof(SoundtrackVisible));
+        Raise(nameof(AgendaVisible));
         Raise(nameof(EnabledModuleCount));
     }
 
-    private HashSet<DashboardModule> ModuleDefaults() =>
-        ModuleInfo.Defaults.Concat(
-                _settings.ClipboardHistoryEnabled ? new[] { DashboardModule.Clipboard } : Array.Empty<DashboardModule>())
-            .ToHashSet();
+    private HashSet<DashboardModule> ModuleDefaults()
+    {
+        // The opt-in collectors are only part of the page once they are switched on, and a
+        // user who turned the weather off keeps it off.
+        var modules = ModuleInfo.Defaults
+            .Where(module => module != DashboardModule.Weather || _settings.WeatherEnabled)
+            .ToList();
+
+        if (_settings.ClipboardHistoryEnabled)
+        {
+            modules.Add(DashboardModule.Clipboard);
+        }
+
+        if (_settings.ScreenTimeEnabled)
+        {
+            modules.Add(DashboardModule.ScreenTime);
+        }
+
+        return modules.ToHashSet();
+    }
 
     public void SetModuleEnabled(DashboardModule module, bool enabled)
     {
@@ -332,6 +348,16 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         if (module == DashboardModule.Clipboard)
         {
             _settings.ClipboardHistoryEnabled = enabled;
+        }
+
+        if (module == DashboardModule.ScreenTime)
+        {
+            _settings.ScreenTimeEnabled = enabled;
+        }
+
+        if (module == DashboardModule.Weather)
+        {
+            _settings.WeatherEnabled = enabled;
         }
 
         ApplyModuleSwitches();
@@ -523,7 +549,11 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
     public string ScreenTimeNote =>
         ScreenTimeAggregator.Encouragement(_screenTime.Today, _screenTime.Yesterday);
 
-    public IReadOnlyList<double> ScreenTimeWeek => _screenTime.WeekBars;
+    private static readonly string[] WeekdayLetters = { "M", "T", "W", "T", "F", "S", "S" };
+
+    /// <summary>Seven bars for the week strip, oldest first, with the weekday letter below.</summary>
+    public IReadOnlyList<(double Value, string Label)> ScreenTimeWeek =>
+        _screenTime.WeekBars.Select((value, index) => (value, WeekdayLetters[index % WeekdayLetters.Length])).ToList();
 
     public string ScreenTimeFooter =>
         _settings.ScreenTimeEnabled

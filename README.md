@@ -4,10 +4,10 @@
 
 # DeskDot
 
-**A Dynamic Island-inspired productivity overlay for Windows 10 and Windows 11.**
+**A little space. A better day.**
 
-Your clock, next agenda item, media controls, a focus timer and live system stats —
-in one small island that sits above your desktop.
+A calm daily dashboard for Windows 10 and Windows 11 — focus timer, live weather, clipboard
+history, quick notes, screen time, agenda and system stats, in one quiet window.
 
 [![Build](https://github.com/Maheshyadav1318/DeskDot/actions/workflows/build.yml/badge.svg)](https://github.com/Maheshyadav1318/DeskDot/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-0a0a0c?style=flat)](LICENSE)
@@ -18,18 +18,9 @@ Designed &amp; Developed by **D.R.M.Y.** ✨
 
 </div>
 
-```
-  ● 07:56  ·  Wed, Nov 25            CPU 14%  RAM 11G          DeskDot
-╭──────────────────────────────────────────────────────────────────────╮
-│  Have a wonderful day! ✨      │  ▣  Amber Stillness                  │
-│  07:56  Wed, Nov 25            │     Ólafur & Kiasmos                 │
-│  ╭──────────────────────────╮  │     ▬▬▬▬▬▬▬▬▭▭▭▭▭▭▭▭      ⏮ ⏸ ⏭    │
-│  │ Next · 14:00             │  │  ╭────────────╮ ╭────────────╮      │
-│  │ Test sleep/resume & …    │  │  │ FOCUS 25:00│ │ CPU   14%  │      │
-│  ╰──────────────────────────╯  │  │ Start Reset│ │ RAM  11G   │      │
-│  [DeskDot] [Focus] [Settings]  │  ╰────────────╯ ╰────────────╯      │
-╰──────────────────────────────────────────────────────────────────────╯
-```
+<p align="center">
+  <img src="src/DeskDot/Assets/dashboard-hero.jpg" width="720" alt="A calm landscape — the feeling DeskDot is going for" />
+</p>
 
 ---
 
@@ -39,9 +30,14 @@ Grab the latest build from **[Releases](https://github.com/Maheshyadav1318/DeskD
 
 | Asset | What it is |
 | --- | --- |
-| `DeskDot-<version>-setup.exe` | Per-user installer — **no admin prompt**, Start-menu entry, optional launch-at-login |
-| `DeskDot-win-x64.zip` | Portable x64 build, self-contained (no .NET install needed) |
+| `DeskDot-2.0.0-setup.exe` | Per-user installer — **no admin prompt**, Start-menu entries, optional launch-at-sign-in and desktop shortcut |
+| `DeskDot-win-x64.zip` | Portable x64 build, self-contained (no .NET install needed) — unzip and run `DeskDot.exe` |
 | `DeskDot-win-arm64.zip` | Portable build for Windows on ARM |
+
+Three clicks: run the installer → choose whether DeskDot starts with Windows → **Install**.
+It lands in `%LOCALAPPDATA%\Programs\DeskDot` for your user only, with no driver and no
+service. To remove it, use *Apps & features* like any other app; your settings and notes stay
+in `%APPDATA%\DeskDot` unless you delete them.
 
 > Binaries are produced by CI from this repository and are **not code-signed**, so SmartScreen
 > may warn on first run — see [SECURITY.md](SECURITY.md#binary-provenance). Prefer building
@@ -57,145 +53,168 @@ Grab the latest build from **[Releases](https://github.com/Maheshyadav1318/DeskD
 
 ## ✨ What it does
 
-| | Feature |
-| --- | --- |
-| 🏝️ | **One island, two states** — a compact pill (clock, date, CPU/RAM) that morphs into the full panel and back. |
-| 📊 | **Real system stats** — CPU from a `GetSystemTimes` delta, memory from `GlobalMemoryStatusEx`. No services, no NuGet packages. |
-| ⏱️ | **Focus timer** — Start / Pause / Reset countdown with a tray notification when the session ends. |
-| 🎵 | **Media card** — album art, transport buttons and click-to-seek on the progress bar. |
-| 📅 | **Next up** — reads your own `agenda.txt` and always shows the next item of the day. |
-| ⌨️ | **Global hotkey** — `Alt+Space` toggles the island from anywhere; rebindable, with automatic fallback if another app owns the gesture. |
-| 🖱️ | **Drag to place** — put the island anywhere; the position is remembered. |
-| 🧰 | **Lives in the tray** — left-click toggles, right-click for Settings / Exit. Single instance. |
-| 🔋 | **Resilient** — hotkey re-registers after sleep/resume and unlock; unreadable settings fall back to defaults; failures never crash the overlay. |
+Eight small modules on one page. Each one can be switched off in **Setup → Modules**.
 
-### Keyboard & mouse
+| | Module | What it shows |
+| --- | --- | --- |
+| ⏱️ | **Focus** | A 25-minute timer (15/20/25/30/45/50/60 to choose from) with Start, Pause and Reset, a thin progress ring and a quiet chime when it ends |
+| ⛅ | **Weather** | Current conditions, today's high/low, humidity and wind for your city — live from Open-Meteo, or a clearly-labelled placeholder if you stay offline |
+| 🖥️ | **System** | CPU, memory and battery, sampled every three seconds and **paused while the window is hidden** |
+| 📊 | **Screen time** *(opt-in)* | Today's total, how it compares with yesterday, a Mon–Sun bar chart and your top apps |
+| 🔔 | **Clock** | The time, the date and a greeting that fits the hour |
+| 📋 | **Clipboard** *(opt-in)* | The last text you copied, how long ago, and a browser for the last 25 entries — memory only, masked when it looks like a secret |
+| 📝 | **Notes** | One-line thoughts kept in a local JSON file, with the latest one pinned on the dashboard |
+| 🗓️ | **Agenda** | Your agenda from a plain text file, split into what's still ahead and what's already passed |
 
-| Action | Gesture |
-| --- | --- |
-| Expand / collapse | `Alt+Space` or click the island |
-| Collapse | `Esc` or click the desktop |
-| Move the island | Drag the island |
-| Open Setup | Tray → *Settings…* or `DeskDot.exe --settings` |
-| Play / pause, skip | Media buttons in the expanded panel |
-| Seek | Click anywhere on the progress bar |
+Plus a **reminder** card that rotates through a few quiet lines, a **module manager** showing
+all eight, and two global hotkeys. The page reflows when a module is switched off, so what is
+left gets the room.
+
+### The whole window
+
+```
+  DeskDot   ·   A little space. A better day.                       Modules  Setup  Hide
+╭──────────────────────────────────────────────────────────────────────────────────────╮
+│  A LITTLE FOCUS                       ╭───────────────╮   ╭────── THIS PC · LIVE ────╮
+│                                       │  Portland     │   │ CPU        12%           │
+│  25:00                                │  18°  Partly  │   │ MEMORY     46%           │
+│  One thing at a time   [Start focus]  │  cloudy       │   │ BATTERY    100% Charging │
+│  Good morning                         │  H 21° L 13°  │   │ No drivers · no admin    │
+│                                       ╰───────────────╯   ╰──────────────────────────╯
+│  ╭── SCREEN TIME ────────╮  ╭── A LITTLE REMINDER ──────────────────────────────────╮
+│  │ 2h 34m   12% vs yest. │  │ "You don't have to do it all. Just the next right      │
+│  │ M T W T F S S         │  │  thing."                          [Another] [Notes]     │
+│  │ Chrome 1h 12m         │  ╰────────────────────────────────────────────────────────╯
+│  ╰───────────────────────╯  ╭── CLIPBOARD ──╮  ╭── AGENDA ──────╮  ╭── NOTES ───────╮
+│                             │ "Make room…"  │  │ 11:30 Design…  │  │ Groceries      │
+│                             │ 2 min ago     │  │ 14:00 Focus    │  │ milk, oats     │
+│                             ╰───────────────╯  ╰────────────────╯  ╰────────────────╯
+│  YOUR MODULES · 8 little helpers            Toggle Ctrl+Alt+D  ·  Setup Ctrl+,          │
+╰──────────────────────────────────────────────────────────────────────────────────────╯
+```
 
 ---
 
-## 🚀 Build from source
+## 🔒 Privacy, in plain language
+
+- **Offline by default.** DeskDot works fully with no internet. The single exception is the
+  weather card: turning it on (and it is on only once you pick a city) means an HTTPS request
+  to **Open-Meteo** every 15 minutes — coordinates and units, nothing else. No account, no
+  telemetry, no analytics, no update check.
+- **Clipboard history and screen time are off until you switch them on**, and both are
+  explained in Setup → Privacy before you do. Clipboard history never leaves memory: it is
+  gone when DeskDot closes, and entries that look like passwords, tokens or card numbers are
+  masked.
+- **Screen time stays local.** DeskDot reads which app has focus to count minutes per app; it
+  never records window titles, keystrokes, screenshots or URLs.
+- **No elevation, ever.** No driver, no service, no admin prompt — the installer and the app
+  both run as you.
+
+Full detail, including exactly which URLs are contacted, is in [SECURITY.md](SECURITY.md).
+
+---
+
+## ⌨️ Hotkeys
+
+| Action | Default | Change it |
+| --- | --- | --- |
+| Show / hide DeskDot | `Ctrl+Alt+D` | Setup → General |
+| Open Setup | `Ctrl+,` | Setup → General |
+
+Both can be set to a handful of sensible combinations. If a combination is already taken by
+another app, DeskDot falls back to its default and says so in Setup.
+
+### Command line
+
+| Switch | Effect |
+| --- | --- |
+| `--tray` / `--minimised` | Start hidden in the tray (used by the "start with Windows" shortcut) |
+| `--settings` | Open Setup instead of the dashboard |
+
+---
+
+## ⚙️ Setup
+
+Everything lives in one small window, in four tabs:
+
+- **General** — the two hotkeys, focus length, always-on-top, start with Windows, start minimised.
+- **Modules** — one switch per module, so the page keeps only what you use.
+- **Weather** — type a city, pick it from the list, choose °C or °F. Coordinates are cached,
+  so the lookup happens once.
+- **Privacy** — the clipboard and screen-time switches, each with a paragraph on exactly what
+  is stored and where, plus the buttons to clear the history that exists.
+
+### Files it keeps
+
+| Path | Contents |
+| --- | --- |
+| `%APPDATA%\DeskDot\settings.json` | Your preferences, module choices and window position |
+| `%APPDATA%\DeskDot\screentime.json` | Per-app screen-time totals, only if you enable screen time |
+| `%APPDATA%\DeskDot\notes.json` | Notes |
+| `%APPDATA%\DeskDot\agenda.txt` | Agenda — one `HH:mm Title` per line, edit it in Notepad ([sample](docs/agenda.sample.txt)) |
+| `%APPDATA%\DeskDot\crash.log` | Written only if something goes wrong |
+
+A sample of the settings file is in [docs/settings.sample.json](docs/settings.sample.json).
+
+---
+
+## 🛠️ Build from source
 
 ```powershell
 git clone https://github.com/Maheshyadav1318/DeskDot.git
 cd DeskDot
 
-# run it
-dotnet run --project src/DeskDot/DeskDot.csproj
-
-# tests
-dotnet test tests/DeskDot.Tests/DeskDot.Tests.csproj
-
-# release build → self-contained publish → installer
-pwsh ./scripts/build.ps1 -Configuration Release -Publish -Installer
+dotnet build DeskDot.sln -c Release        # compile
+dotnet test  tests/DeskDot.Tests           # 166 tests — run these on Windows;
+                                           # Core/ itself is portable
+dotnet run   --project src/DeskDot         # launch the dashboard
 ```
 
-Visual Studio users can open `DeskDot.sln`, choose `Release | x64` and press F5.
-
-### Cutting a release
+One script does the whole release if you have [Inno Setup 6](https://jrsoftware.org/isinfo.php):
 
 ```powershell
-git tag v1.0.0
-git push origin v1.0.0
+pwsh scripts/build.ps1                      # publish x64 + arm64, zip, build the installer
+pwsh scripts/build.ps1 -SkipInstaller       # just the portable zips
 ```
 
-CI then builds `win-x64` + `win-arm64`, compiles the Inno Setup installer and attaches all three
-assets to the GitHub Release. Every push and pull request runs the unit tests first and builds
-with warnings-as-errors.
+### Layout
 
----
-
-## ⚙️ Configuration
-
-Settings are edited in **DeskDot Setup** and stored in `%APPDATA%\DeskDot\settings.json`
-(see [`docs/settings.sample.json`](docs/settings.sample.json)):
-
-| Key | Default | Meaning |
-| --- | --- | --- |
-| `ToggleHotkey` | `Alt+Space` | Global expand/collapse gesture |
-| `CollapseOnFocusLoss` | `true` | Collapse when the island loses focus |
-| `AlwaysOnTop` | `true` | Keep the island above other windows |
-| `StartWithWindows` | `false` | HKCU Run entry (per-user, no elevation) |
-| `StatsIntervalMs` | `4000` | CPU/RAM sample interval |
-| `FocusMinutes` | `25` | Focus session length |
-| `DisplayName` | `""` | Optional name used in the greeting |
-| `IslandLeft` / `IslandTop` | `null` | Remembered position; `null` centres the island |
-
-### Your own agenda
-
-Create `%APPDATA%\DeskDot\agenda.txt` — one `HH:mm Title` entry per line
-(see [`docs/agenda.sample.txt`](docs/agenda.sample.txt)). Without it, a short demo agenda is used.
-
-```text
-# %APPDATA%\DeskDot\agenda.txt
-09:30 Stand-up & inbox triage
-11:00 Deep work block
-14:00 Test sleep/resume & hotkey re-registration
-18:00 Wrap up
 ```
-
-Crashes are appended to `%APPDATA%\DeskDot\crash.log`.
-
----
-
-## 📁 Repository layout
-
-```text
-DeskDot.sln                      Solution: app + tests (Release | x64 / arm64)
 src/DeskDot/
-  Core/                          Pure logic — agenda planning, hotkey parsing, focus clock,
-                                 formatting, greetings              (unit tested)
-  Models/                        Records: settings, system snapshot, agenda item, track
-  Services/                      Win32/WPF services: stats, media, focus timer, hotkey,
-                                 tray, power notifications, agenda, settings, startup
-  ViewModels/                    Bindable island state
-  Views/                         "DeskDot Setup" dialog
-  Themes/                        Palette (Dark.xaml) and control styles (Controls.xaml)
-  Assets/                        App icon (png + multi-size ico) and album art
-  MainWindow.xaml(.cs)           The island: morph, drag, tray and hotkey wiring
-  App.xaml(.cs)                  Entry point: single instance, crash log
-tests/DeskDot.Tests/             xUnit suite over Core + file-based services (runs on Linux)
-installer/DeskDot.iss            Inno Setup script (per-user install)
-scripts/build.ps1                Build / publish / installer helper
-docs/                            ROADMAP.md, TESTING.md (manual QA), sample config
-.github/                         CI workflow, issue/PR templates, Dependabot
+  Core/          pure, unit-tested logic (time parsing, weather codes, clipboard rules,
+                 power formatting, screen-time aggregation, hotkey gestures)
+  Models/        settings and dashboard view models
+  Services/      Win32 + file I/O: hotkeys, tray, weather, clipboard, screen time, notes
+  ViewModels/    DashboardViewModel — the single binding surface
+  Views/         Setup, Notes and Clipboard windows
+  Themes/        Light.xaml (palette) and DashboardControls.xaml (pill/toggle/meter styles)
+  MainWindow.*   the dashboard
+tests/DeskDot.Tests/   166 xunit tests over Core/Models/Services
+installer/DeskDot.iss   Inno Setup script (per-user, no elevation)
+scripts/build.ps1      one-command release build
 ```
 
----
-
-## ✅ Status
-
-| Area | State |
-| --- | --- |
-| Island window, morph, drag, hotkey, tray, single instance | ✅ Done |
-| Live CPU/RAM, focus timer, agenda card, settings | ✅ Done |
-| Unit tests (89 cases) gating CI, warnings-as-errors | ✅ Done |
-| Installer + x64/ARM64 builds, release attachments | ✅ Verified in CI |
-| Media card | 🟡 Demo playlist; system-player mirroring is the v1.1 goal |
-| Code signing, auto-update | ⛔ Not yet |
-
-See [docs/ROADMAP.md](docs/ROADMAP.md) for what's next, and
-[docs/TESTING.md](docs/TESTING.md) for the manual QA checklist used before a release.
+`Core/` deliberately has no WPF or Win32 dependency, so most logic is testable without a
+desktop; CI runs the suite on an Ubuntu runner inside a Windows-targeting project. See [docs/TESTING.md](docs/TESTING.md) for what is
+covered and what needs a real desktop.
 
 ---
+
+## 🗺️ Roadmap
+
+[ROADMAP.md](docs/ROADMAP.md) has what's next — per-window screen time, a compact mini mode,
+and a few refinements. v2.0 replaced the original Dynamic Island overlay with this dashboard;
+the island is not coming back, but the ideas it carried (glanceable focus, quiet stats) all
+live here.
 
 ## 🤝 Contributing
 
-Issues and pull requests are welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
-New logic belongs in `src/DeskDot/Core` **with tests**; everything else is verified by hand
-against `docs/TESTING.md`. Security problems go through [SECURITY.md](SECURITY.md), not the
-public issue tracker.
+Bug reports and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[issue templates](.github/ISSUE_TEMPLATE). Please don't report security issues in public;
+use [SECURITY.md](SECURITY.md).
 
 ## 📄 License
 
 [MIT](LICENSE) © D.R.M.Y.
 
-<div align="center"><sub>Made with care for people who like their desktop a little tidier. ✨</sub></div>
+<div align="center"><sub>Made with a little space in mind.</sub></div>
