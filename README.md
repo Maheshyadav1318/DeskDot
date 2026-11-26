@@ -76,7 +76,7 @@ left gets the room.
   DeskDot   ·   A little space. A better day.                       Modules  Setup  Hide
 ╭──────────────────────────────────────────────────────────────────────────────────────╮
 │  A LITTLE FOCUS                       ╭───────────────╮   ╭────── THIS PC · LIVE ────╮
-│                                       │  Portland     │   │ CPU        12%           │
+│                                       │  Your city    │   │ CPU        12%           │
 │  25:00                                │  18°  Partly  │   │ MEMORY     46%           │
 │  One thing at a time   [Start focus]  │  cloudy       │   │ BATTERY    100% Charging │
 │  Good morning                         │  H 21° L 13°  │   │ No drivers · no admin    │
@@ -98,8 +98,9 @@ left gets the room.
 ## 🔒 Privacy, in plain language
 
 - **Offline by default.** DeskDot works fully with no internet. The single exception is the
-  weather card: turning it on (and it is on only once you pick a city) means an HTTPS request
-  to **Open-Meteo** every 15 minutes — coordinates and units, nothing else. No account, no
+  weather card: DeskDot never guesses your location. The first request happens only after you
+  pick a city in Setup (one geocoding lookup, once), and then it refreshes from
+  **Open-Meteo** every 15 minutes — coordinates and units, nothing else. No account, no
   telemetry, no analytics, no update check.
 - **Clipboard history and screen time are off until you switch them on**, and both are
   explained in Setup → Privacy before you do. Clipboard history never leaves memory: it is

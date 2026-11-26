@@ -191,6 +191,17 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
+    public void Weather_has_no_location_until_one_is_chosen()
+    {
+        // The app must not be able to make a weather request on a fresh install.
+        var settings = new AppSettings();
+
+        Assert.Null(settings.WeatherLatitude);
+        Assert.Null(settings.WeatherLongitude);
+        Assert.Equal(string.Empty, settings.WeatherLocation);
+    }
+
+    [Fact]
     public void Module_list_round_trips()
     {
         var service = new SettingsService(_dir);

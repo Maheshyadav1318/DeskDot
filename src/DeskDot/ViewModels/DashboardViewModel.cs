@@ -53,11 +53,15 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         _quote = Quotes.First().Text;
         _quoteSource = Quotes.First().Source;
 
+        // Coordinates only exist once a city has been chosen, and the service refuses to ask
+        // for a forecast without them.
         _weather = new WeatherService(
-            () => _settings.WeatherEnabled,
+            () => _settings.WeatherEnabled
+                  && _settings.WeatherLatitude is not null
+                  && _settings.WeatherLongitude is not null,
             () => (
-                _settings.WeatherLatitude ?? 45.5231,
-                _settings.WeatherLongitude ?? -122.6765,
+                _settings.WeatherLatitude ?? 0,
+                _settings.WeatherLongitude ?? 0,
                 _settings.WeatherUseFahrenheit));
 
         _clipboard = new ClipboardService(
@@ -141,11 +145,15 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
             _screenTime.Start();
         }
 
-        if (_settings.WeatherEnabled)
+        if (NeedsWeather())
         {
             _weather.Start();
         }
     }
+
+    /// <summary>Weather can only run with consent and a location the user picked.</summary>
+    private bool NeedsWeather() =>
+        _settings.WeatherEnabled && _settings.WeatherLatitude is not null && _settings.WeatherLongitude is not null;
 
     public void ApplySettings(AppSettings settings)
     {
@@ -188,7 +196,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
             _screenTime.Stop();
         }
 
-        if (_settings.WeatherEnabled)
+        if (NeedsWeather())
         {
             _weather.Start();
         }
@@ -446,7 +454,12 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
     public bool WeatherHasData => _weatherSnapshot.HasData;
 
-    public string WeatherLocation => _settings.WeatherLocation;
+    public string WeatherLocation =>
+        string.IsNullOrWhiteSpace(_settings.WeatherLocation) ? "Your city" : _settings.WeatherLocation;
+
+    /// <summary>True while no city has been chosen, so the card can invite the user to pick one.</summary>
+    public bool WeatherNeedsLocation =>
+        _settings.WeatherEnabled && _settings.WeatherLatitude is null;
 
     public string WeatherTemperature =>
         _weatherSnapshot.HasData
@@ -457,7 +470,13 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         _weatherSnapshot.HasData ? WeatherCodes.Describe(_weatherSnapshot.Code) : "Weather unavailable";
 
     public string WeatherAside =>
-        _weatherSnapshot.HasData ? WeatherCodes.Aside(_weatherSnapshot.Code) : (_weatherError ?? "Enable weather in Settings.");
+        _weatherSnapshot.HasData
+            ? WeatherCodes.Aside(_weatherSnapshot.Code)
+            : !_settings.WeatherEnabled
+                ? "Weather is off. Turn it on in Setup."
+                : WeatherNeedsLocation
+                    ? "Pick your city in Setup, and today's sky appears here."
+                    : _weatherError ?? "Weather unavailable right now.";
 
     public string WeatherGlyph => WeatherCodes.Glyph(_weatherSnapshot.HasData ? _weatherSnapshot.Code : 3);
 
@@ -488,6 +507,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
     {
         Raise(nameof(WeatherHasData));
         Raise(nameof(WeatherLocation));
+        Raise(nameof(WeatherNeedsLocation));
         Raise(nameof(WeatherTemperature));
         Raise(nameof(WeatherDescription));
         Raise(nameof(WeatherAside));

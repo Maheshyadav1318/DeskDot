@@ -52,17 +52,24 @@ public sealed class AppSettings
 
     /* ---------- Weather ---------- */
 
-    /// <summary>Fetch live weather from Open-Meteo. Off means the card shows a placeholder.</summary>
+    /// <summary>
+    /// Fetch live weather from Open-Meteo. On by default, but a request is only made once a
+    /// city has been chosen — see <see cref="WeatherLatitude"/>. Turning it off stops the
+    /// requests entirely and the card falls back to its placeholder.
+    /// </summary>
     public bool WeatherEnabled { get; set; } = true;
 
-    /// <summary>City shown on the weather card, e.g. "Portland, OR".</summary>
-    public string WeatherLocation { get; set; } = "Portland, OR";
+    /// <summary>City shown on the weather card, e.g. "Guntur, Andhra Pradesh, India".</summary>
+    public string WeatherLocation { get; set; } = string.Empty;
 
-    /// <summary>Resolved latitude for the weather request.</summary>
-    public double? WeatherLatitude { get; set; } = 45.5231;
+    /// <summary>
+    /// Resolved latitude for the weather request. Null until the user picks a city in Setup —
+    /// the app then shows "Choose a city" and sends nothing over the network.
+    /// </summary>
+    public double? WeatherLatitude { get; set; }
 
-    /// <summary>Resolved longitude for the weather request.</summary>
-    public double? WeatherLongitude { get; set; } = -122.6765;
+    /// <summary>Resolved longitude for the weather request. Null until a city is chosen.</summary>
+    public double? WeatherLongitude { get; set; }
 
     /// <summary>Use °F instead of °C.</summary>
     public bool WeatherUseFahrenheit { get; set; }

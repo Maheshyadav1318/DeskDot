@@ -263,9 +263,7 @@ public partial class SettingsWindow : Window
         }
 
         _draft.WeatherEnabled = WeatherEnabledCheck.IsChecked == true;
-        _draft.WeatherLocation = string.IsNullOrWhiteSpace(WeatherLocationBox.Text)
-            ? "Portland, OR"
-            : WeatherLocationBox.Text.Trim();
+        _draft.WeatherLocation = WeatherLocationBox.Text.Trim();
         _draft.WeatherUseFahrenheit = FahrenheitCheck.IsChecked == true;
 
         if (_draft.WeatherLatitude is null || _draft.WeatherLongitude is null)

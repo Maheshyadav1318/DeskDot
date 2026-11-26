@@ -148,7 +148,9 @@
               <Button Grid.Column="2" Content="Look up" Style="{StaticResource GhostPill}"
                       Click="OnLookUpWeather" />
             </Grid>
-            <TextBlock x:Name="WeatherStatusText" Style="{StaticResource CardCaption}" Margin="0,8,0,14" />
+            <TextBlock x:Name="WeatherStatusText" Style="{StaticResource CardCaption}" Margin="0,8,0,14"
+                       TextWrapping="Wrap"
+                       Text="Type your city and press Look up once — DeskDot needs the coordinates before it can ask for a forecast." />
 
             <CheckBox x:Name="FahrenheitCheck" Style="{StaticResource Switch}"
                       Content="Show temperatures in °F" Margin="0,0,0,16" />
