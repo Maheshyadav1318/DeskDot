@@ -2,7 +2,7 @@ using DeskDot.Core;
 
 namespace DeskDot.Services;
 
-/// <summary>Pomodoro-style focus countdown driving the island's focus card.</summary>
+/// <summary>Pomodoro-style focus countdown driving the dashboard's focus card.</summary>
 public sealed class FocusTimerService : IDisposable
 {
     private readonly DispatcherTimer _timer;

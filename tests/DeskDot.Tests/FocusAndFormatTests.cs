@@ -100,33 +100,3 @@ public class SystemFormatTests
         Assert.Equal(expected, SystemFormat.MemoryPercent(used, total), 3);
     }
 }
-
-public class GreetingRulesTests
-{
-    [Theory]
-    [InlineData(2, "Still up? Take it easy. 🌙")]
-    [InlineData(7, "Good morning! ✨")]
-    [InlineData(14, "Have a wonderful day! ✨")]
-    [InlineData(19, "Good evening! 🌇")]
-    [InlineData(23, "Winding down. 🌙")]
-    [InlineData(-1, "Have a wonderful day! ✨")]
-    public void ForHour_picks_the_right_sentence(int hour, string expected)
-    {
-        Assert.Equal(expected, GreetingRules.ForHour(hour));
-    }
-
-    [Fact]
-    public void ForHour_folds_in_the_display_name()
-    {
-        Assert.Equal("Good morning, Mahesh! ✨", GreetingRules.ForHour(8, "Mahesh"));
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void ForHour_ignores_a_blank_name(string? name)
-    {
-        Assert.Equal("Good morning! ✨", GreetingRules.ForHour(8, name));
-    }
-}

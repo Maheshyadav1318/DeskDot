@@ -1,23 +1,20 @@
 using System.IO;
 using DeskDot.Core;
-using DeskDot.Models;
 
 namespace DeskDot.Services;
 
 /// <summary>
-/// Supplies the "Next · HH:mm" card. Reads <c>%APPDATA%\DeskDot\agenda.txt</c> when present
-/// and otherwise falls back to the bundled demo agenda, so the island is never empty.
-/// Parsing and selection live in <see cref="AgendaPlanner"/> (pure and unit tested).
+/// Supplies the "Up next" card from <c>%APPDATA%\DeskDot\agenda.txt</c>. Parsing and the
+/// "what's next" decision live in <see cref="DayPlan"/> (pure and unit tested); this class
+/// only does file IO. An empty result means the user has not written an agenda yet, and the
+/// dashboard says so instead of inventing entries.
 /// </summary>
 public sealed class AgendaService
 {
     private readonly string _agendaPath;
 
     public AgendaService()
-        : this(Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "DeskDot",
-            "agenda.txt"))
+        : this(DefaultPath)
     {
     }
 
@@ -29,29 +26,25 @@ public sealed class AgendaService
 
     public string AgendaPath => _agendaPath;
 
-    public AgendaItem GetNext(DateTime now) => GetNext(TimeOnly.FromDateTime(now));
+    /// <summary>Where the agenda lives, for the empty-state hint.</summary>
+    public static string DefaultPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DeskDot", "agenda.txt");
 
-    public AgendaItem GetNext(TimeOnly now)
-    {
-        var userAgenda = TryLoadUserAgenda();
-        return AgendaPlanner.Next(userAgenda ?? AgendaPlanner.DemoAgenda, now);
-    }
-
-    private IReadOnlyList<AgendaItem>? TryLoadUserAgenda()
+    /// <summary>The whole plan for today, or an empty list when there is no usable file.</summary>
+    public IReadOnlyList<PlanEntry> GetPlan()
     {
         try
         {
             if (!File.Exists(_agendaPath))
             {
-                return null;
+                return Array.Empty<PlanEntry>();
             }
 
-            var items = AgendaPlanner.Parse(File.ReadLines(_agendaPath));
-            return items.Count > 0 ? items : null;
+            return DayPlan.Parse(File.ReadLines(_agendaPath));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return null; // unreadable agenda: fall back to the demo list
+            return Array.Empty<PlanEntry>();
         }
     }
 }

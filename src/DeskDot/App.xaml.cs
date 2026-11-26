@@ -9,7 +9,7 @@ namespace DeskDot;
 public partial class App : Application
 {
     private const string MutexName = @"Local\DeskDot.SingleInstance";
-    private const string ShowEventName = @"Local\DeskDot.ShowIsland";
+    private const string ShowEventName = @"Local\DeskDot.ShowDashboard";
 
     private static SettingsService? _settingsService;
     private Mutex? _instanceMutex;
@@ -43,10 +43,18 @@ public partial class App : Application
         _settingsService = new SettingsService();
         Settings = _settingsService.Load();
 
-        _mainWindow = new MainWindow(Settings, new AgendaService());
+        _mainWindow = new MainWindow(Settings, new AgendaService(), new NotesService());
         _mainWindow.ExitRequested += (_, _) => Shutdown();
         MainWindow = _mainWindow;
         _mainWindow.Show();
+
+        var startHidden = Settings.StartMinimised ||
+                          e.Args.Any(arg => string.Equals(arg, "--tray", StringComparison.OrdinalIgnoreCase) ||
+                                            string.Equals(arg, "--minimised", StringComparison.OrdinalIgnoreCase));
+        if (startHidden)
+        {
+            _mainWindow.Hide();
+        }
 
         if (e.Args.Any(arg => string.Equals(arg, "--settings", StringComparison.OrdinalIgnoreCase)))
         {
@@ -61,7 +69,7 @@ public partial class App : Application
         _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
         _showWait = ThreadPool.RegisterWaitForSingleObject(
             _showEvent,
-            (_, _) => Dispatcher.BeginInvoke(() => _mainWindow?.ToggleIsland()),
+            (_, _) => Dispatcher.BeginInvoke(() => _mainWindow?.ToggleWindow()),
             state: null,
             Timeout.Infinite,
             executeOnlyOnce: false);

@@ -2,12 +2,10 @@ using DeskDot.Core;
 
 namespace DeskDot.Models;
 
-/// <summary>A single media item surfaced in the island's now-playing card.</summary>
+/// <summary>A single media item surfaced in the soundtrack card.</summary>
 public sealed record TrackInfo(string Title, string Artist, string Album = "")
 {
-    public static readonly TrackInfo Empty = new("Nothing playing", "Start something in any player");
-
-    public bool IsEmpty => ReferenceEquals(this, Empty);
+    public static readonly TrackInfo Empty = new("Quiet for now", "Nothing playing");
 }
 
 /// <summary>Point-in-time CPU / memory reading.</summary>
@@ -20,10 +18,4 @@ public sealed record SystemSnapshot(double CpuPercent, double UsedMemoryGb, doub
     public string CpuText => SystemFormat.Cpu(CpuPercent);
 
     public string MemoryText => SystemFormat.Memory(UsedMemoryGb);
-}
-
-/// <summary>An upcoming calendar-style item shown under the clock.</summary>
-public sealed record AgendaItem(string Time, string Title)
-{
-    public static readonly AgendaItem None = new(string.Empty, "Nothing on the agenda");
 }

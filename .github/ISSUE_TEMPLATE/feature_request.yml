@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest a capability for the island
+description: Suggest a capability for the dashboard
 labels: [enhancement]
 body:
   - type: textarea
@@ -7,7 +7,7 @@ body:
     attributes:
       label: What problem does this solve?
       description: Describe the situation where DeskDot gets in your way or falls short.
-      placeholder: While I'm on a call I keep expanding the island to check the time, and it steals focus.
+      placeholder: I keep DeskDot open next to my editor, but the notes card only shows the latest note.
     validations:
       required: true
 
@@ -15,7 +15,7 @@ body:
     id: proposal
     attributes:
       label: Proposed behaviour
-      description: What should the island do instead? Sketches or mock-ups welcome.
+      description: What should DeskDot do instead? Sketches or mock-ups welcome.
     validations:
       required: true
 
@@ -23,19 +23,22 @@ body:
     id: alternatives
     attributes:
       label: Alternatives considered
-      placeholder: Keep the pill always visible instead, or use a separate widget.
+      placeholder: A separate window instead, or a compact mode for the whole page.
 
   - type: dropdown
     id: area
     attributes:
       label: Area
       options:
-        - Island / window behaviour
-        - Clock and agenda
-        - Media card
+        - Window behaviour
         - Focus timer
+        - Weather
+        - Clipboard
+        - Notes
+        - Screen time
+        - Agenda / up next
         - System stats
-        - Settings and hotkeys
+        - Setup, modules and hotkeys
         - Packaging / installer
         - Other
     validations:

@@ -4,26 +4,29 @@ using DeskDot.Core;
 namespace DeskDot.Services;
 
 /// <summary>
-/// Registers a system-wide hotkey on the island window and raises <see cref="Pressed"/>.
+/// Registers a system-wide hotkey on the dashboard window and raises <see cref="Pressed"/>.
 /// String parsing/formatting is delegated to <see cref="HotkeyGesture"/>; this class only
 /// touches Win32, so it can re-register after sleep/resume or a settings change.
 /// </summary>
 public sealed class HotkeyService : IDisposable
 {
-    private const int HotkeyId = 0xD0D0;
+    private const int DefaultHotkeyId = 0xD0D0;
 
     private readonly HwndSource _source;
     private readonly Action _onPressed;
+    private readonly int _hotkeyId;
     private uint _modifiers;
     private uint _virtualKey;
     private string _gesture = HotkeyGesture.Default;
     private bool _registered;
     private bool _disposed;
 
-    public HotkeyService(HwndSource source, Action onPressed)
+    /// <param name="hotkeyId">Distinct id per gesture; two services may share one window.</param>
+    public HotkeyService(HwndSource source, Action onPressed, int hotkeyId = DefaultHotkeyId)
     {
         _source = source ?? throw new ArgumentNullException(nameof(source));
         _onPressed = onPressed ?? throw new ArgumentNullException(nameof(onPressed));
+        _hotkeyId = hotkeyId;
         _source.AddHook(WndProc);
     }
 
@@ -70,7 +73,7 @@ public sealed class HotkeyService : IDisposable
 
     private bool TryRegister() => NativeMethods.RegisterHotKey(
         _source.Handle,
-        HotkeyId,
+        _hotkeyId,
         _modifiers | NativeMethods.ModNoRepeat,
         _virtualKey);
 
@@ -81,13 +84,13 @@ public sealed class HotkeyService : IDisposable
             return;
         }
 
-        NativeMethods.UnregisterHotKey(_source.Handle, HotkeyId);
+        NativeMethods.UnregisterHotKey(_source.Handle, _hotkeyId);
         _registered = false;
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == NativeMethods.WmHotkey && wParam.ToInt32() == HotkeyId)
+        if (msg == NativeMethods.WmHotkey && wParam.ToInt32() == _hotkeyId)
         {
             _onPressed();
             handled = true;

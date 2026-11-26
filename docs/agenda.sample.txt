@@ -1,12 +1,14 @@
 # DeskDot agenda — save as %APPDATA%\DeskDot\agenda.txt
-# One entry per line: HH:mm Title
+# One entry per line: HH:mm Title   (12-hour times like 2:30PM also work)
+# Add " | detail" after the title to show a small second line.
 # Blank lines and lines starting with # are ignored.
-# The island always shows the next entry at or after the current time,
-# wrapping to the first entry once the day is over.
+#
+# The "Up next" card splits these into what is still ahead and what has
+# already passed, and counts down the gap to the next entry.
 
 09:30 Stand-up & inbox triage
-11:00 Deep work block — no notifications
+11:00 Deep work block | notifications off
 12:30 Lunch
 14:00 Test sleep/resume & hotkey re-registration
-16:30 Review pull requests
+16:30 Review pull requests | design + docs
 18:00 Ship notes & wrap up

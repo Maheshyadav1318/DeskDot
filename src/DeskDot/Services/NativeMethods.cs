@@ -86,6 +86,56 @@ internal static class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool DestroyIcon(IntPtr hIcon);
 
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct SystemPowerStatus
+    {
+        internal byte AclLineStatus;
+        internal byte BatteryFlag;
+        internal byte BatteryLifePercent;
+        internal byte SystemStatusFlag;
+        internal uint BatteryLifeTime;
+        internal uint BatteryFullLifeTime;
+    }
+
+    [DllImport("user32.dll")]
+    internal static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetSystemPowerStatus(out SystemPowerStatus status);
+
+    /// <summary>
+    /// Name of the process owning the foreground window, lower-case without extension.
+    /// Returns <c>null</c> when there is no foreground window or it cannot be opened.
+    /// </summary>
+    internal static string? GetForegroundProcessName()
+    {
+        var handle = GetForegroundWindow();
+        if (handle == IntPtr.Zero)
+        {
+            return null;
+        }
+
+        _ = GetWindowThreadProcessId(handle, out var processId);
+        if (processId == 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var process = System.Diagnostics.Process.GetProcessById((int)processId);
+            return process.ProcessName.ToLowerInvariant();
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return null;
+        }
+    }
+
     internal const int DwmWindowCornerPreference = 33;
     internal const int DwmUseImmersiveDarkMode = 20;
 }

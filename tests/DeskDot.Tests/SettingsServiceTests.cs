@@ -30,9 +30,11 @@ public class SettingsServiceTests : IDisposable
 
         var settings = service.Load();
 
-        Assert.Equal("Alt+Space", settings.ToggleHotkey);
+        Assert.Equal("Ctrl+Alt+D", settings.ToggleHotkey);
+        Assert.Equal("Ctrl+OemComma", settings.SettingsHotkey);
         Assert.Equal(25, settings.FocusMinutes);
-        Assert.True(settings.CollapseOnFocusLoss);
+        Assert.False(settings.ClipboardHistoryEnabled);
+        Assert.False(settings.ScreenTimeEnabled);
     }
 
     [Fact]
@@ -42,7 +44,7 @@ public class SettingsServiceTests : IDisposable
         var settings = new AppSettings
         {
             ToggleHotkey = "Ctrl+Shift+D",
-            CollapseOnFocusLoss = false,
+            SettingsHotkey = "Ctrl+Alt+S",
             AlwaysOnTop = false,
             StartWithWindows = true,
             StatsIntervalMs = 2000,
@@ -56,7 +58,7 @@ public class SettingsServiceTests : IDisposable
         var loaded = service.Load();
 
         Assert.Equal("Ctrl+Shift+D", loaded.ToggleHotkey);
-        Assert.False(loaded.CollapseOnFocusLoss);
+        Assert.Equal("Ctrl+Alt+S", loaded.SettingsHotkey);
         Assert.False(loaded.AlwaysOnTop);
         Assert.True(loaded.StartWithWindows);
         Assert.Equal(2000, loaded.StatsIntervalMs);
@@ -82,7 +84,7 @@ public class SettingsServiceTests : IDisposable
 
         var settings = service.Load();
 
-        Assert.Equal("Alt+Space", settings.ToggleHotkey);
+        Assert.Equal("Ctrl+Alt+D", settings.ToggleHotkey);
     }
 
     [Fact]
@@ -103,8 +105,8 @@ public class SettingsServiceTests : IDisposable
         var settings = service.Load();
 
         Assert.Equal("Only this", settings.DisplayName);
-        Assert.Equal("Alt+Space", settings.ToggleHotkey);
-        Assert.Equal(4000, settings.StatsIntervalMs);
+        Assert.Equal("Ctrl+Alt+D", settings.ToggleHotkey);
+        Assert.Equal(3000, settings.StatsIntervalMs);
     }
 
     [Fact]
@@ -126,8 +128,8 @@ public class SettingsServiceTests : IDisposable
     [Fact]
     public void Default_settings_serialize_without_throwing()
     {
-        // Regression: IslandLeft/Top used to default to double.NaN, which System.Text.Json
-        // refuses to write — saving settings failed silently and nothing was persisted.
+        // Regression: the window position used to default to double.NaN, which
+        // System.Text.Json refuses to write — saving settings failed and nothing persisted.
         var json = JsonSerializer.Serialize(new AppSettings(), SettingsService.SerializerOptions);
 
         Assert.DoesNotContain("NaN", json);
@@ -139,13 +141,107 @@ public class SettingsServiceTests : IDisposable
     {
         var service = new SettingsService(_dir);
 
-        Assert.Null(service.Load().IslandLeft);
+        Assert.Null(service.Load().WindowLeft);
 
-        Assert.True(service.Save(new AppSettings { IslandLeft = 120.5, IslandTop = 40 }));
+        Assert.True(service.Save(new AppSettings
+        {
+            WindowLeft = 120.5,
+            WindowTop = 40,
+            WindowWidth = 1160,
+            WindowHeight = 880
+        }));
         var loaded = service.Load();
 
-        Assert.Equal(120.5, loaded.IslandLeft);
-        Assert.Equal(40, loaded.IslandTop);
+        Assert.Equal(120.5, loaded.WindowLeft);
+        Assert.Equal(40, loaded.WindowTop);
+        Assert.Equal(1160, loaded.WindowWidth);
+        Assert.Equal(880, loaded.WindowHeight);
+    }
+
+    [Fact]
+    public void Module_keys_are_stable()
+    {
+        // These strings are persisted in settings.json. Renaming one would silently reset a
+        // user's module choices, so the set is pinned here on purpose.
+        var keys = ModuleInfo.All.Select(module => module.Key).ToArray();
+
+        Assert.Equal(
+            new[] { "Focus", "Weather", "System", "ScreenTime", "Clock", "Clipboard", "Notes", "Agenda" },
+            keys);
+        Assert.Equal(8, keys.Length);
+        Assert.Equal(keys.Length, keys.Distinct().Count());
+    }
+
+    [Fact]
+    public void Default_modules_exclude_the_private_ones()
+    {
+        Assert.DoesNotContain(DashboardModule.Clipboard, ModuleInfo.Defaults);
+        Assert.DoesNotContain(DashboardModule.ScreenTime, ModuleInfo.Defaults);
+        Assert.Contains(DashboardModule.Focus, ModuleInfo.Defaults);
+    }
+
+    [Fact]
+    public void Privacy_sensitive_modules_are_off_by_default()
+    {
+        var settings = new AppSettings();
+
+        Assert.False(settings.ClipboardHistoryEnabled);
+        Assert.False(settings.ScreenTimeEnabled);
+        Assert.True(settings.MaskSensitiveClipboard);
+    }
+
+    [Fact]
+    public void Weather_has_no_location_until_one_is_chosen()
+    {
+        // The app must not be able to make a weather request on a fresh install.
+        var settings = new AppSettings();
+
+        Assert.Null(settings.WeatherLatitude);
+        Assert.Null(settings.WeatherLongitude);
+        Assert.Equal(string.Empty, settings.WeatherLocation);
+    }
+
+    [Fact]
+    public void Module_list_round_trips()
+    {
+        var service = new SettingsService(_dir);
+        var settings = new AppSettings { EnabledModules = new List<string> { "System", "Clock", "Notes" } };
+
+        Assert.True(service.Save(settings));
+
+        Assert.Equal(new[] { "System", "Clock", "Notes" }, service.Load().EnabledModules);
+    }
+
+    [Fact]
+    public void Weather_location_round_trips()
+    {
+        var service = new SettingsService(_dir);
+        var settings = new AppSettings
+        {
+            WeatherLocation = "Guntur, Andhra Pradesh, India",
+            WeatherLatitude = 16.3067,
+            WeatherLongitude = 80.4365,
+            WeatherUseFahrenheit = true
+        };
+
+        Assert.True(service.Save(settings));
+        var loaded = service.Load();
+
+        Assert.Equal("Guntur, Andhra Pradesh, India", loaded.WeatherLocation);
+        Assert.Equal(16.3067, loaded.WeatherLatitude!.Value, 4);
+        Assert.Equal(80.4365, loaded.WeatherLongitude!.Value, 4);
+        Assert.True(loaded.WeatherUseFahrenheit);
+    }
+
+    [Fact]
+    public void Clone_does_not_share_the_module_list()
+    {
+        var original = new AppSettings { EnabledModules = new List<string> { "System" } };
+
+        var copy = original.Clone();
+        copy.EnabledModules.Add("Notes");
+
+        Assert.Single(original.EnabledModules);
     }
 
     [Fact]

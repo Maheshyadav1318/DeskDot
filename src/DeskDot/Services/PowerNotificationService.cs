@@ -3,7 +3,7 @@ using System.Windows.Interop;
 namespace DeskDot.Services;
 
 /// <summary>
-/// Listens for display / power / session-change events so the island can drop its
+/// Listens for display / power / session-change events so the dashboard can drop its
 /// animations while the machine sleeps and re-acquire its hotkey after resume.
 /// </summary>
 public sealed class PowerNotificationService : IDisposable

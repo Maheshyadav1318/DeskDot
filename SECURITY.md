@@ -2,13 +2,13 @@
 
 ## Supported versions
 
-DeskDot is a local desktop overlay that stores its state under `%APPDATA%\DeskDot`. Only the
-latest release is supported.
+DeskDot is a local desktop dashboard that stores its state under `%APPDATA%\DeskDot`. Only
+the latest release is supported.
 
 | Version | Supported |
 | --- | --- |
-| 1.0.x | ✅ |
-| < 1.0 | ❌ |
+| 2.0.x | ✅ |
+| 1.0.x | ❌ (no longer maintained) |
 
 ## Reporting a vulnerability
 
@@ -23,18 +23,38 @@ expect an initial response within about a week.
 
 Helping you reason about risk:
 
-- **No network access.** The app makes no HTTP requests and has no telemetry, analytics or
-  update-check traffic. There is nothing to intercept outbound.
+- **One network destination, and only for weather.** v2.0 asked for a live weather card, so
+  the app talks to **Open-Meteo** (open-meteo.com), a free service that needs no API key and
+  no account:
+  - `https://geocoding-api.open-meteo.com/v1/search` — once, when you type a city into Setup,
+    to turn that name into coordinates.
+  - `https://api.open-meteo.com/v1/forecast` — every 15 minutes, with only the coordinates
+    and the unit system, to fetch the current temperature and today's high/low.
+
+  Both requests are plain HTTPS GETs. Nothing identifying is sent: no account, no device id,
+  no city name after the initial lookup, no app version. Turn the Weather module off in Setup
+  → Modules and the app makes no requests at all. There is still **no telemetry, no
+  analytics, no crash reporting and no update check**.
 - **No elevation.** It ships with `requestedExecutionLevel level="asInvoker"`; it never asks
   for administrator rights.
 - **Local files only.** Reads and writes `%APPDATA%\DeskDot\settings.json`,
-  `%APPDATA%\DeskDot\agenda.txt` and `%APPDATA%\DeskDot\crash.log`. It opens no other paths.
+  `%APPDATA%\DeskDot\agenda.txt`, `%APPDATA%\DeskDot\notes.json` and
+  `%APPDATA%\DeskDot\crash.log` and, when screen time is enabled,
+  `%APPDATA%\DeskDot\screentime.json`. It opens no other paths. Clipboard history is
+  **memory only** and is gone when DeskDot exits.
+- **Clipboard history is opt-in and never leaves the machine.** It is off by default, keeps at
+  most 25 text entries in RAM, masks entries that look like secrets (passwords, keys, tokens,
+  card numbers) and offers Clear. Images and files are ignored.
+- **Screen time is opt-in.** It reads the *title of the foreground window* every few seconds
+  to attribute time to an app name, keeps a rolling week of per-app totals in
+  `%APPDATA%\DeskDot\screentime.json`, and records no window titles, no keystrokes, no
+  screenshots and no URLs.
+- **Agenda is a local text file.** `%APPDATA%\DeskDot\agenda.txt` — one `HH:mm Title` per
+  line. DeskDot only reads it; edit it in any text editor.
 - **One registry key.** "Start with Windows" writes the `DeskDot` value under
   `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (per-user, no HKLM).
-- **One global hotkey** (`Alt+Space` by default) and a tray icon, both owned by the current
-  user session.
-- **Media card is local simulation** in v1.0: it plays a bundled demo playlist and does not
-  read other applications' media sessions yet.
+- **Two global hotkeys** (`Ctrl+Alt+D` to show/hide, `Ctrl+OemComma` for Setup by default) and
+  a tray icon, both owned by the current user session. Both are configurable in Setup.
 
 ## Binary provenance
 
@@ -47,5 +67,7 @@ prefer, build from source instead.
 ## Dependencies
 
 The application itself has **no third-party runtime dependencies** — only the .NET 8 BCL,
-WPF and WinForms (`NotifyIcon`). The test project uses xunit and Microsoft.NET.Test.Sdk at
-build time only. Dependabot is configured to keep the GitHub Actions used by CI current.
+WPF and WinForms (`NotifyIcon`). It talks to the public Open-Meteo HTTP API using
+`HttpClient` from the BCL; no SDK or package is bundled for it. The test project uses xunit
+and Microsoft.NET.Test.Sdk at build time only. Dependabot is configured to keep the GitHub
+Actions used by CI current.

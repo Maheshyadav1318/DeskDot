@@ -51,10 +51,10 @@ jobs:
           --logger "trx;LogFileName=results.trx"
           --results-directory TestResults
 
-      # Surface failing assertions as check annotations so they are visible in the PR
-      # without digging through logs.
-      - name: Report failures
-        if: failure()
+      # Always publish the totals as a check annotation, and surface each failing assertion
+      # individually so it is visible in the PR without digging through logs.
+      - name: Summarise tests
+        if: always()
         run: |
           python3 - <<'PY'
           import glob, xml.etree.ElementTree as ET
@@ -119,7 +119,7 @@ jobs:
           # Treat warnings as errors, and make sure any that appear are printed with
           # file/line detail instead of vanishing into the build log.
           $output = dotnet build src/DeskDot/DeskDot.csproj -c Release --no-restore `
-            -p:Platform=${{ matrix.platform }} -p:Version=1.0.0 -warnaserror 2>&1
+            -p:Platform=${{ matrix.platform }} -p:Version=2.0.0 -warnaserror 2>&1
           $exit = $LASTEXITCODE
           $output | ForEach-Object { Write-Host $_ }
           ($output | Select-String -Pattern 'warning|error' -SimpleMatch:$false) |
@@ -130,7 +130,7 @@ jobs:
       - name: Publish self-contained
         run: >
           dotnet publish src/DeskDot/DeskDot.csproj -c Release -r ${{ matrix.rid }}
-          --self-contained true -p:PublishSingleFile=false -p:Version=1.0.0
+          --self-contained true -p:PublishSingleFile=false -p:Version=2.0.0
           -o publish/${{ matrix.rid }}
 
       - name: Remove debug symbols
@@ -197,7 +197,8 @@ jobs:
           if ($env:GITHUB_REF -like 'refs/tags/v*') {
             $v = $env:GITHUB_REF -replace '^refs/tags/v', ''
           } else {
-            $v = '1.0.0'
+            # Non-tag builds (PRs, manual runs) only need a well-formed version.
+            $v = '0.0.0-ci'
           }
           "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
