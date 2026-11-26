@@ -53,12 +53,14 @@ public class DayPlanTests
     {
         var entries = DayPlan.Parse(new[] { "09:00 Early", "11:30 Mid", "14:00 Late" });
 
+        // At 12:00 both 09:00 and 11:30 have passed; only 14:00 is still ahead.
         var (upcoming, earlier) = DayPlan.Split(entries, new TimeOnly(12, 0));
 
-        Assert.Single(earlier);
+        Assert.Equal(2, earlier.Count);
         Assert.Equal("Early", earlier[0].Title);
-        Assert.Equal(2, upcoming.Count);
-        Assert.Equal("Mid", upcoming[0].Title);
+        Assert.Equal("Mid", earlier[1].Title);
+        Assert.Single(upcoming);
+        Assert.Equal("Late", upcoming[0].Title);
     }
 
     [Fact]
