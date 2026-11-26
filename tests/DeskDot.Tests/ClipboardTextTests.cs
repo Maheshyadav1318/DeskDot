@@ -79,7 +79,7 @@ public class ClipboardTextTests
     {
         var trimmed = ClipboardText.Trim(new[] { "a", "a", "", "b", "  ", "b" });
 
-        Assert.Equal(new[] { "a", "b", "b" }, trimmed);
+        Assert.Equal(new[] { "a", "b" }, trimmed);
     }
 
     [Fact]

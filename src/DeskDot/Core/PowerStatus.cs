@@ -9,7 +9,8 @@ public static class PowerStatus
     /// </summary>
     public static string Describe(int percent, bool isCharging, bool hasBattery = true)
     {
-        if (!hasBattery || percent < 0)
+        // A negative reading with a battery present means "unknown"; clamp, never show "-5%".
+        if (!hasBattery)
         {
             return "No battery";
         }

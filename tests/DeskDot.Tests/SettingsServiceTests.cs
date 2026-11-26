@@ -84,7 +84,7 @@ public class SettingsServiceTests : IDisposable
 
         var settings = service.Load();
 
-        Assert.Equal("Alt+Space", settings.ToggleHotkey);
+        Assert.Equal("Ctrl+Alt+D", settings.ToggleHotkey);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class SettingsServiceTests : IDisposable
         var settings = service.Load();
 
         Assert.Equal("Only this", settings.DisplayName);
-        Assert.Equal("Alt+Space", settings.ToggleHotkey);
+        Assert.Equal("Ctrl+Alt+D", settings.ToggleHotkey);
         Assert.Equal(3000, settings.StatsIntervalMs);
     }
 

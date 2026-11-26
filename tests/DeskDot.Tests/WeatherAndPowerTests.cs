@@ -73,6 +73,7 @@ public class PowerStatusTests
     [InlineData(12, true, "12% Charging")]
     [InlineData(140, false, "100%")]
     [InlineData(-5, false, "0%")]
+    [InlineData(-5, true, "0% Charging")]
     public void Describe_formats_battery_state(int percent, bool charging, string expected)
     {
         Assert.Equal(expected, PowerStatus.Describe(percent, charging));

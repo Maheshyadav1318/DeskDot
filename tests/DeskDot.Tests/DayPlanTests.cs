@@ -33,10 +33,11 @@ public class DayPlanTests
     [Fact]
     public void Parse_accepts_am_pm_times_and_normalises_them()
     {
-        var entries = DayPlan.Parse(new[] { "11:30AM Lunch", "14:00PM Focus" });
+        var entries = DayPlan.Parse(new[] { "11:30AM Lunch", "2:00PM Focus", "12:15AM Late" });
 
         Assert.Equal("11:30", entries[0].Time);
-        Assert.Equal("14:00", entries[1].Time); // 14:00PM is 14:00 (12-hour reduced then AM/PM applied)
+        Assert.Equal("14:00", entries[1].Time);
+        Assert.Equal("00:15", entries[2].Time);
     }
 
     [Fact]
