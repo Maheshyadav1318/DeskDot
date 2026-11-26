@@ -53,7 +53,7 @@
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,6,0" Focusable="False">
       <StackPanel Margin="28,6,22,24">
 
-        <!-- ---------- Focus + weather ---------- -->
+        <!-- Focus + weather -->
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1.35*" />
@@ -133,7 +133,7 @@
           </Border>
         </Grid>
 
-        <!-- ---------- System + screen time ---------- -->
+        <!-- System + screen time -->
         <Grid Margin="0,16,0,0">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*" />
@@ -234,7 +234,7 @@
           </Border>
         </Grid>
 
-        <!-- ---------- Reminder + clipboard ---------- -->
+        <!-- Reminder + clipboard -->
         <Grid Margin="0,16,0,0">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*" />
@@ -275,7 +275,7 @@
           </Border>
         </Grid>
 
-        <!-- ---------- Up next + notes ---------- -->
+        <!-- Up next + notes -->
         <Grid Margin="0,16,0,0">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1.35*" />
@@ -339,7 +339,7 @@
           </Border>
         </Grid>
 
-        <!-- ---------- Modules strip ---------- -->
+        <!-- Modules strip -->
         <Border Style="{StaticResource Card}" Margin="0,16,0,0">
           <StackPanel>
             <Grid>
