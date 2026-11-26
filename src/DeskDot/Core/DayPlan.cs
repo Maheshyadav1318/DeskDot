@@ -182,15 +182,15 @@ public static class DayPlan
             }
         }
 
-        if (TimeSpan.TryParse(trimmed, CultureInfo.InvariantCulture, out var loose))
+        // Numeric fallback: "11:30" or "9:5". Parsed digit-by-digit so a 12-hour host
+        // locale can never reinterpret it as 23:30.
+        var parts = trimmed.Split(':');
+        if (parts.Length == 2 &&
+            int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var hours) &&
+            int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var minutes) &&
+            hours is >= 0 and <= 23 && minutes is >= 0 and <= 59)
         {
-            return Validate(loose);
-        }
-
-        // Locale-aware fallback last: some cultures accept "11.30" or "11:30 h".
-        if (TimeSpan.TryParse(trimmed, CultureInfo.CurrentCulture, out var local))
-        {
-            return Validate(local);
+            return new TimeSpan(hours, minutes, 0);
         }
 
         return null;
