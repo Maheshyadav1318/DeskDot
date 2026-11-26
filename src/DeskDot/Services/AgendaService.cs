@@ -1,13 +1,12 @@
 using System.IO;
 using DeskDot.Core;
-using DeskDot.Models;
 
 namespace DeskDot.Services;
 
 /// <summary>
-/// Supplies the "Next · HH:mm" card. Reads <c>%APPDATA%\DeskDot\agenda.txt</c> when present
-/// and otherwise falls back to the bundled demo agenda, so the island is never empty.
-/// Parsing and selection live in <see cref="AgendaPlanner"/> (pure and unit tested).
+/// Supplies the "Up next" card from <c>%APPDATA%\DeskDot\agenda.txt</c>. Parsing and the
+/// "what's next" decision live in <see cref="DayPlan"/> (pure and unit tested); this class
+/// only does file IO. An empty result means the caller should use its own sample plan.
 /// </summary>
 public sealed class AgendaService
 {
@@ -29,29 +28,21 @@ public sealed class AgendaService
 
     public string AgendaPath => _agendaPath;
 
-    public AgendaItem GetNext(DateTime now) => GetNext(TimeOnly.FromDateTime(now));
-
-    public AgendaItem GetNext(TimeOnly now)
-    {
-        var userAgenda = TryLoadUserAgenda();
-        return AgendaPlanner.Next(userAgenda ?? AgendaPlanner.DemoAgenda, now);
-    }
-
-    private IReadOnlyList<AgendaItem>? TryLoadUserAgenda()
+    /// <summary>The whole plan for today, or an empty list when there is no usable file.</summary>
+    public IReadOnlyList<PlanEntry> GetPlan()
     {
         try
         {
             if (!File.Exists(_agendaPath))
             {
-                return null;
+                return Array.Empty<PlanEntry>();
             }
 
-            var items = AgendaPlanner.Parse(File.ReadLines(_agendaPath));
-            return items.Count > 0 ? items : null;
+            return DayPlan.Parse(File.ReadLines(_agendaPath));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return null; // unreadable agenda: fall back to the demo list
+            return Array.Empty<PlanEntry>();
         }
     }
 }

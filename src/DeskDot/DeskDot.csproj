@@ -39,7 +39,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\app-icon.png" />
-    <Resource Include="Assets\album-art.jpg" />
+    <Resource Include="Assets\dashboard-hero.jpg" />
   </ItemGroup>
 
 </Project>

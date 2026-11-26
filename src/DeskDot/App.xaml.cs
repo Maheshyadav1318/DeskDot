@@ -43,10 +43,18 @@ public partial class App : Application
         _settingsService = new SettingsService();
         Settings = _settingsService.Load();
 
-        _mainWindow = new MainWindow(Settings, new AgendaService());
+        _mainWindow = new MainWindow(Settings, new AgendaService(), new NotesService());
         _mainWindow.ExitRequested += (_, _) => Shutdown();
         MainWindow = _mainWindow;
         _mainWindow.Show();
+
+        var startHidden = Settings.StartMinimised ||
+                          e.Args.Any(arg => string.Equals(arg, "--tray", StringComparison.OrdinalIgnoreCase) ||
+                                            string.Equals(arg, "--minimised", StringComparison.OrdinalIgnoreCase));
+        if (startHidden)
+        {
+            _mainWindow.Hide();
+        }
 
         if (e.Args.Any(arg => string.Equals(arg, "--settings", StringComparison.OrdinalIgnoreCase)))
         {

@@ -21,7 +21,7 @@ public sealed class TrayService : IDisposable
         {
             ShowImageMargin = false
         };
-        menu.Items.Add(new WinForms.ToolStripMenuItem("Show / hide island", null, (_, _) => toggleIsland()));
+        menu.Items.Add(new WinForms.ToolStripMenuItem("Show / hide DeskDot", null, (_, _) => toggleIsland()));
         menu.Items.Add(new WinForms.ToolStripMenuItem("Settings…", null, (_, _) => openSettings()));
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(new WinForms.ToolStripMenuItem("Exit DeskDot", null, (_, _) => exit()));
@@ -29,7 +29,7 @@ public sealed class TrayService : IDisposable
         _notifyIcon = new WinForms.NotifyIcon
         {
             Icon = _icon,
-            Text = "DeskDot — Dynamic Island for Windows",
+            Text = "DeskDot — A little space. A better day.",
             Visible = true,
             ContextMenuStrip = menu
         };

@@ -1,11 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
 using DeskDot.Models;
 using DeskDot.Services;
 using DeskDot.ViewModels;
@@ -14,102 +10,59 @@ using DeskDot.Views;
 namespace DeskDot;
 
 /// <summary>
-/// The DeskDot overlay: a borderless, per-monitor-DPI-aware, always-on-top window that
-/// morphs between a collapsed pill and the full island panel.
+/// The DeskDot dashboard window: a light, calm page of cards with a tray presence, a global
+/// show/hide hotkey, remembered geometry and sleep/resume resilience.
 /// </summary>
 public partial class MainWindow : Window
 {
-    private const double CollapsedWidth = 404;
-    private const double CollapsedHeight = 100;
-    private const double ExpandedWidth = 800;
-    private const double ExpandedHeight = 420;
-
-    private static readonly Duration MorphDuration = new(TimeSpan.FromMilliseconds(420));
-    private static readonly IEasingFunction MorphEase = new CubicEase { EasingMode = EasingMode.EaseOut };
-
-    private readonly IslandViewModel _viewModel;
+    private readonly DashboardViewModel _viewModel;
     private readonly AppSettings _settings;
 
     private HwndSource? _source;
-    private HotkeyService? _hotkeys;
+    private HotkeyService? _toggleHotkey;
+    private HotkeyService? _settingsHotkey;
     private PowerNotificationService? _power;
     private TrayService? _tray;
     private SettingsWindow? _settingsWindow;
-    private bool _isExpanded;
-    private bool _isMorphing;
     private bool _allowClose;
 
-    public MainWindow(AppSettings settings, AgendaService agenda)
+    public MainWindow(AppSettings settings, AgendaService agenda, NotesService notes)
     {
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        ArgumentNullException.ThrowIfNull(agenda);
 
         InitializeComponent();
 
-        _viewModel = new IslandViewModel(settings, agenda);
+        _viewModel = new DashboardViewModel(settings, agenda, notes);
         DataContext = _viewModel;
         _viewModel.FocusCompleted += OnFocusCompleted;
+        _viewModel.SettingsChanged += (_, _) => App.SaveSettings(_settings);
 
-        Width = CollapsedWidth;
-        Height = CollapsedHeight;
         Topmost = settings.AlwaysOnTop;
 
         Loaded += OnLoaded;
         Closing += OnClosing;
-        Deactivated += OnDeactivated;
-        PreviewKeyDown += OnPreviewKeyDown;
-        LocationChanged += (_, _) => PersistPosition();
+        StateChanged += (_, _) => PersistGeometry();
     }
 
-    /// <summary>Raised when the user asks to exit (tray menu) so the app can shut down.</summary>
+    /// <summary>Raised when the app should shut down (tray menu).</summary>
     public event EventHandler? ExitRequested;
 
-    /// <summary>Opened from other parts of the shell (tray menu / hotkey).</summary>
-    public void ToggleIsland()
-    {
-        if (_isExpanded)
-        {
-            Collapse();
-        }
-        else
-        {
-            Expand();
-        }
-    }
-
-    public void ShowSettings()
-    {
-        if (_settingsWindow is { IsLoaded: true })
-        {
-            _settingsWindow.Activate();
-            return;
-        }
-
-        _settingsWindow = new SettingsWindow(_settings.Clone());
-        _settingsWindow.SettingsSaved += OnSettingsSaved;
-        _settingsWindow.Closed += (_, _) => _settingsWindow = null;
-        _settingsWindow.Show();
-        _settingsWindow.Activate();
-    }
-
-    /* ------------------------------------------------------------------ */
-    /*  Lifecycle                                                          */
-    /* ------------------------------------------------------------------ */
-
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object sender, EventArgs e)
     {
         _source = (HwndSource)PresentationSource.FromVisual(this)!;
 
         ApplyWindowChrome();
-        RestorePosition();
+        RestoreGeometry();
         _viewModel.Start();
 
-        _hotkeys = new HotkeyService(_source, ToggleIsland);
-        _hotkeys.Register(_settings.ToggleHotkey);
+        _toggleHotkey = new HotkeyService(_source, ToggleWindow);
+        _toggleHotkey.Register(_settings.ToggleHotkey);
+
+        _settingsHotkey = new HotkeyService(_source, ShowSettings, id: 0xD0D1);
+        _settingsHotkey.Register(_settings.SettingsHotkey);
 
         _power = new PowerNotificationService(_source, OnSystemResumed);
-
-        _tray = new TrayService(ShowSettings, ToggleIsland, RequestExit);
+        _tray = new TrayService(ShowSettings, ShowWindow, RequestExit);
 
         if (_settings.StartWithWindows != StartupService.IsEnabled())
         {
@@ -124,261 +77,211 @@ public partial class MainWindow : Window
             return;
         }
 
+        // Rounded corners on Windows 11; silently ignored on Windows 10.
         var handle = _source.Handle;
-
-        // No taskbar button, no Alt+Tab entry — DeskDot behaves like a shell overlay.
-        var exStyle = NativeMethods.GetWindowLong(handle, NativeMethods.GwlExStyle);
-        exStyle |= NativeMethods.WsExToolWindow;
-        exStyle &= ~NativeMethods.WsExAppWindow;
-        NativeMethods.SetWindowLong(handle, NativeMethods.GwlExStyle, exStyle);
-
-        // Rounded corners + dark backdrop on Windows 11; silently ignored on Windows 10.
-        var corner = 2; // DWMWCP_ROUND
+        var corner = 2;
         NativeMethods.DwmSetWindowAttribute(handle, NativeMethods.DwmWindowCornerPreference, ref corner, sizeof(int));
 
-        var dark = 1;
-        NativeMethods.DwmSetWindowAttribute(handle, NativeMethods.DwmUseImmersiveDarkMode, ref dark, sizeof(int));
-
+        var light = 0;
+        NativeMethods.DwmSetWindowAttribute(handle, NativeMethods.DwmUseImmersiveDarkMode, ref light, sizeof(int));
     }
 
-    private void RestorePosition()
+    /* ------------------------------------------------------------------ */
+    /*  Geometry                                                           */
+    /* ------------------------------------------------------------------ */
+
+    private void RestoreGeometry()
     {
-        var workArea = SystemParameters.WorkArea;
-        var left = _settings.IslandLeft ?? workArea.Left + (workArea.Width - Width) / 2;
-        var top = _settings.IslandTop ?? workArea.Top + 12;
+        var work = SystemParameters.WorkArea;
 
-        left = Math.Clamp(left, workArea.Left - Width / 2, workArea.Right - Width / 2);
-        top = Math.Clamp(top, workArea.Top - Height, workArea.Bottom - Height);
+        if (_settings.WindowWidth is { } width && _settings.WindowHeight is { } height)
+        {
+            Width = Math.Clamp(width, MinWidth, SystemParameters.VirtualScreenWidth);
+            Height = Math.Clamp(height, MinHeight, SystemParameters.VirtualScreenHeight);
+        }
+        else
+        {
+            Width = Math.Min(1160, work.Width - 80);
+            Height = Math.Min(880, work.Height - 80);
+        }
 
-        Left = left;
-        Top = top;
+        if (_settings.WindowLeft is { } left && _settings.WindowTop is { } top)
+        {
+            // Only restore a position that is still on a visible monitor.
+            var stillVisible = left + 80 < SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth
+                               && left > SystemParameters.VirtualScreenLeft - Width + 80
+                               && top + 40 < SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight
+                               && top > SystemParameters.VirtualScreenTop - Height + 40;
+
+            if (stillVisible)
+            {
+                WindowStartupLocation = WindowStartupLocation.Manual;
+                Left = left;
+                Top = top;
+            }
+        }
+
+        if (_settings.WindowMaximised)
+        {
+            WindowState = WindowState.Maximized;
+        }
     }
 
-    private void PersistPosition()
+    private void PersistGeometry()
     {
-        if (_isMorphing || !IsLoaded)
+        if (!IsLoaded)
         {
             return;
         }
 
-        _settings.IslandLeft = Left;
-        _settings.IslandTop = Top;
-    }
-
-    private void OnSystemResumed()
-    {
-        // Sleep/resume drops hotkey registrations and stalls animations.
-        _hotkeys?.ReRegister();
-        _viewModel.Start();
-    }
-
-    private void OnDeactivated(object? sender, EventArgs e)
-    {
-        if (_isExpanded && _settings.CollapseOnFocusLoss)
+        if (WindowState == WindowState.Normal)
         {
-            Collapse();
+            _settings.WindowLeft = Left;
+            _settings.WindowTop = Top;
+            _settings.WindowWidth = Width;
+            _settings.WindowHeight = Height;
         }
-    }
 
-    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Escape && _isExpanded)
-        {
-            Collapse();
-            e.Handled = true;
-        }
+        _settings.WindowMaximised = WindowState == WindowState.Maximized;
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Morph between pill and panel                                       */
+    /*  Show / hide / hotkeys                                              */
     /* ------------------------------------------------------------------ */
 
-    public void Expand()
+    public void ToggleWindow()
     {
-        if (_isExpanded || _isMorphing)
+        if (IsVisible && WindowState != WindowState.Minimized)
         {
-            return;
+            HideToTray();
         }
+        else
+        {
+            ShowWindow();
+        }
+    }
 
-        _isExpanded = true;
-        _isMorphing = true;
-
-        // Grow around the island's centre so it feels anchored to the notch area.
-        var targetLeft = Left - (ExpandedWidth - CollapsedWidth) / 2;
-        AnimateTo(ExpandedWidth, ExpandedHeight, targetLeft);
-
-        CollapsedPanel.Visibility = Visibility.Collapsed;
-        ExpandedPanel.Visibility = Visibility.Visible;
-        AnimateOpacity(ExpandedPanel, 0, 1, TimeSpan.FromMilliseconds(260), TimeSpan.FromMilliseconds(120));
+    public void ShowWindow()
+    {
+        Show();
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
 
         Activate();
         Focus();
     }
 
-    public void Collapse()
+    private void HideToTray()
     {
-        if (!_isExpanded || _isMorphing)
-        {
-            return;
-        }
-
-        _isExpanded = false;
-        _isMorphing = true;
-
-        var targetLeft = Left + (ExpandedWidth - CollapsedWidth) / 2;
-        AnimateTo(CollapsedWidth, CollapsedHeight, targetLeft);
-        AnimateOpacity(ExpandedPanel, 1, 0, TimeSpan.FromMilliseconds(120), TimeSpan.Zero);
-
-        var restore = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(130) };
-        restore.Tick += (_, _) =>
-        {
-            restore.Stop();
-            if (!_isExpanded)
-            {
-                ExpandedPanel.Visibility = Visibility.Collapsed;
-                CollapsedPanel.Visibility = Visibility.Visible;
-            }
-        };
-        restore.Start();
-
-        PersistPosition();
+        PersistGeometry();
+        Hide();
     }
 
-    private void AnimateTo(double width, double height, double left)
+    private void OnSystemResumed()
     {
-        var duration = MorphDuration;
-
-        BeginAnimation(WidthProperty, new DoubleAnimation(width, duration) { EasingFunction = MorphEase });
-        BeginAnimation(HeightProperty, new DoubleAnimation(height, duration) { EasingFunction = MorphEase });
-        BeginAnimation(LeftProperty, new DoubleAnimation(left, duration) { EasingFunction = MorphEase });
-
-        var done = new DispatcherTimer { Interval = duration.TimeSpan };
-        done.Tick += (_, _) =>
-        {
-            done.Stop();
-            BeginAnimation(WidthProperty, null);
-            BeginAnimation(HeightProperty, null);
-            BeginAnimation(LeftProperty, null);
-            Width = width;
-            Height = height;
-            Left = left;
-            _isMorphing = false;
-            PersistPosition();
-        };
-        done.Start();
-    }
-
-    private static void AnimateOpacity(UIElement element, double from, double to, TimeSpan duration, TimeSpan delay)
-    {
-        element.BeginAnimation(OpacityProperty, new DoubleAnimation(from, to, new Duration(duration))
-        {
-            BeginTime = delay,
-            EasingFunction = MorphEase
-        });
+        // Sleep/resume and unlock drop hotkey registrations.
+        _toggleHotkey?.ReRegister();
+        _settingsHotkey?.ReRegister();
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Interaction                                                        */
+    /*  Card actions                                                       */
     /* ------------------------------------------------------------------ */
 
-    private void OnIslandMouseDown(object sender, MouseButtonEventArgs e)
-    {
-        if (!_isExpanded)
-        {
-            Expand();
-            e.Handled = true;
-            return;
-        }
+    private void OnFocusToggle(object sender, RoutedEventArgs e) => _viewModel.ToggleFocus();
 
-        // Dragging anywhere on the island chrome moves the overlay.
-        if (e.OriginalSource is DependencyObject source && FindAncestor<Button>(source) is not null)
-        {
-            return;
-        }
+    private void OnFocusReset(object sender, RoutedEventArgs e) => _viewModel.ResetFocus();
 
-        DragMove();
-    }
+    private void OnNextQuote(object sender, RoutedEventArgs e) => _viewModel.NextQuote();
 
-    private static T? FindAncestor<T>(DependencyObject? node) where T : DependencyObject
-    {
-        while (node is not null)
-        {
-            if (node is T match)
-            {
-                return match;
-            }
+    private void OnOpenSettings(object sender, RoutedEventArgs e) => ShowSettings();
 
-            node = node is Visual or System.Windows.Media.Media3D.Visual3D
-                ? VisualTreeHelper.GetParent(node)
-                : LogicalTreeHelper.GetParent(node);
-        }
+    private void OnOpenModules(object sender, RoutedEventArgs e) => ShowSettings(openModulesTab: true);
 
-        return null;
-    }
+    private void OnOpenNotes(object sender, RoutedEventArgs e) => ShowNotes();
 
-    private void OnMediaProgressClick(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is FrameworkElement element && element.ActualWidth > 0)
-        {
-            var ratio = Math.Clamp(e.GetPosition(element).X / element.ActualWidth, 0, 1);
-            _viewModel.SeekMedia(ratio * 100);
-        }
-    }
+    private void OnNewNote(object sender, RoutedEventArgs e) => ShowNotes(newNote: true);
 
-    private void OnPlayPauseClick(object sender, RoutedEventArgs e) => _viewModel.TogglePlayback();
+    private void OnOpenClipboard(object sender, RoutedEventArgs e) => ShowClipboard();
 
-    private void OnNextClick(object sender, RoutedEventArgs e) => _viewModel.NextTrack();
+    private void OnScreenTimeDetails(object sender, RoutedEventArgs e) => MessageBox.Show(
+        this,
+        "Screen time only records how long each application was in the foreground, in totals.\n\n" +
+        "It never stores window titles, page addresses, file names or content, and the history " +
+        "stays in %APPDATA%\\DeskDot\\screentime.json on this PC.",
+        "About screen time",
+        MessageBoxButton.OK,
+        MessageBoxImage.Information);
 
-    private void OnPreviousClick(object sender, RoutedEventArgs e) => _viewModel.PreviousTrack();
-
-    private void OnFocusToggleClick(object sender, RoutedEventArgs e) => _viewModel.ToggleFocus();
-
-    private void OnFocusResetClick(object sender, RoutedEventArgs e) => _viewModel.ResetFocus();
-
-    private void OnFocusQuickClick(object sender, RoutedEventArgs e)
-    {
-        _viewModel.StartFocus();
-        Collapse();
-    }
-
-    private void OnOpenSelfClick(object sender, RoutedEventArgs e) => OpenWithShell(AppContext.BaseDirectory);
-
-    private void OnPowerClick(object sender, RoutedEventArgs e) =>
-        OpenWithShell("ms-settings:batterysaver");
-
-    private void OpenWithShell(string target)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
-        }
-        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
-        {
-            // Shell targets can be blocked by policy; ignore rather than crash.
-        }
-    }
-
-    private void OnSettingsClick(object sender, RoutedEventArgs e) => ShowSettings();
-
-    private void OnFocusCompleted(object? sender, EventArgs e)
-    {
+    private void OnFocusCompleted(object? sender, EventArgs e) =>
         _tray?.ShowBalloon("Focus session complete ✨", "Nice work — take a short break.");
-    }
 
     /* ------------------------------------------------------------------ */
-    /*  Settings + shutdown                                                */
+    /*  Dialogs                                                            */
     /* ------------------------------------------------------------------ */
+
+    public void ShowSettings(bool openModulesTab = false)
+    {
+        ShowWindow();
+
+        if (_settingsWindow is { IsLoaded: true })
+        {
+            _settingsWindow.Activate();
+            if (openModulesTab)
+            {
+                _settingsWindow.ShowModulesTab();
+            }
+
+            return;
+        }
+
+        _settingsWindow = new SettingsWindow(_settings.Clone());
+        _settingsWindow.SettingsSaved += OnSettingsSaved;
+        _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+        _settingsWindow.Owner = this;
+        _settingsWindow.Show();
+
+        if (openModulesTab)
+        {
+            _settingsWindow.ShowModulesTab();
+        }
+    }
+
+    private void ShowNotes(bool newNote = false)
+    {
+        var window = new NotesWindow(_viewModel) { Owner = this };
+        window.ShowDialog();
+    }
+
+    private void ShowClipboard()
+    {
+        var window = new ClipboardWindow(_viewModel) { Owner = this };
+        window.ShowDialog();
+    }
 
     private void OnSettingsSaved(object? sender, AppSettings updated)
     {
-        var previousHotkey = _settings.ToggleHotkey;
+        var previousToggle = _settings.ToggleHotkey;
+        var previousSettings = _settings.SettingsHotkey;
+
         _settings.ToggleHotkey = updated.ToggleHotkey;
-        _settings.CollapseOnFocusLoss = updated.CollapseOnFocusLoss;
+        _settings.SettingsHotkey = updated.SettingsHotkey;
         _settings.AlwaysOnTop = updated.AlwaysOnTop;
         _settings.StartWithWindows = updated.StartWithWindows;
         _settings.StatsIntervalMs = updated.StatsIntervalMs;
         _settings.FocusMinutes = updated.FocusMinutes;
         _settings.DisplayName = updated.DisplayName;
+        _settings.WeatherEnabled = updated.WeatherEnabled;
+        _settings.WeatherLocation = updated.WeatherLocation;
+        _settings.WeatherLatitude = updated.WeatherLatitude;
+        _settings.WeatherLongitude = updated.WeatherLongitude;
+        _settings.WeatherUseFahrenheit = updated.WeatherUseFahrenheit;
+        _settings.ClipboardHistoryEnabled = updated.ClipboardHistoryEnabled;
+        _settings.ScreenTimeEnabled = updated.ScreenTimeEnabled;
+        _settings.MaskSensitiveClipboard = updated.MaskSensitiveClipboard;
+        _settings.EnabledModules = new List<string>(updated.EnabledModules);
 
         if (Topmost != _settings.AlwaysOnTop)
         {
@@ -386,17 +289,29 @@ public partial class MainWindow : Window
         }
 
         StartupService.Apply(_settings.StartWithWindows);
-        if (!string.Equals(previousHotkey, _settings.ToggleHotkey, StringComparison.OrdinalIgnoreCase))
+
+        if (!string.Equals(previousToggle, _settings.ToggleHotkey, StringComparison.OrdinalIgnoreCase))
         {
-            _hotkeys?.Register(_settings.ToggleHotkey);
+            _toggleHotkey?.Register(_settings.ToggleHotkey);
+        }
+
+        if (!string.Equals(previousSettings, _settings.SettingsHotkey, StringComparison.OrdinalIgnoreCase))
+        {
+            _settingsHotkey?.Register(_settings.SettingsHotkey);
         }
 
         _viewModel.ApplySettings(_settings);
+        App.SaveSettings(_settings);
     }
+
+    /* ------------------------------------------------------------------ */
+    /*  Shutdown                                                           */
+    /* ------------------------------------------------------------------ */
 
     public void RequestExit()
     {
         _allowClose = true;
+        PersistGeometry();
         Close();
     }
 
@@ -404,17 +319,14 @@ public partial class MainWindow : Window
     {
         if (!_allowClose)
         {
-            // Closing via Alt+F4 or the shell should only hide the island.
+            // Closing the window keeps DeskDot in the tray; only Exit really quits.
             e.Cancel = true;
-            if (_isExpanded)
-            {
-                Collapse();
-            }
-
+            HideToTray();
             return;
         }
 
-        _hotkeys?.Dispose();
+        _toggleHotkey?.Dispose();
+        _settingsHotkey?.Dispose();
         _power?.Dispose();
         _tray?.Dispose();
         _viewModel.Dispose();
