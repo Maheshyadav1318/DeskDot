@@ -186,11 +186,11 @@ public static class DayPlan
         // locale can never reinterpret it as 23:30.
         var parts = trimmed.Split(':');
         if (parts.Length == 2 &&
-            int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var hours) &&
-            int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var minutes) &&
-            hours is >= 0 and <= 23 && minutes is >= 0 and <= 59)
+            int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var rawHours) &&
+            int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var rawMinutes) &&
+            rawHours is >= 0 and <= 23 && rawMinutes is >= 0 and <= 59)
         {
-            return new TimeSpan(hours, minutes, 0);
+            return new TimeSpan(rawHours, rawMinutes, 0);
         }
 
         return null;
