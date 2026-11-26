@@ -155,6 +155,8 @@ public static class DayPlan
 
         var trimmed = text.Trim();
 
+        // A bare "11:30" must stay 24-hour even when the current locale is 12-hour, so the
+        // numeric forms are parsed with an invariant culture first.
         if (TimeSpan.TryParseExact(trimmed, @"hh\:mm", CultureInfo.InvariantCulture, out var exact) ||
             TimeSpan.TryParseExact(trimmed, @"h\:mm", CultureInfo.InvariantCulture, out exact))
         {
@@ -183,6 +185,12 @@ public static class DayPlan
         if (TimeSpan.TryParse(trimmed, CultureInfo.InvariantCulture, out var loose))
         {
             return Validate(loose);
+        }
+
+        // Locale-aware fallback last: some cultures accept "11.30" or "11:30 h".
+        if (TimeSpan.TryParse(trimmed, CultureInfo.CurrentCulture, out var local))
+        {
+            return Validate(local);
         }
 
         return null;
