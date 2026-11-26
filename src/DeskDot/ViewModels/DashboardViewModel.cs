@@ -40,6 +40,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
     private string _quote;
     private string _quoteSource = string.Empty;
     private bool _disposed;
+    private IReadOnlyList<PlanEntry> _plan = Array.Empty<PlanEntry>();
 
     public DashboardViewModel(AppSettings settings, AgendaService agenda, NotesService notes)
     {
@@ -623,11 +624,19 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
     /*  Agenda                                                             */
     /* ------------------------------------------------------------------ */
 
+    /// <summary>True once the user actually has an agenda file with at least one entry.</summary>
+    public bool AgendaHasPlan => _plan.Count > 0;
+
     public string AgendaCountLabel
     {
         get
         {
-            var remaining = DayPlan.RemainingToday(CurrentPlan(), TimeOnly.FromDateTime(DateTime.Now));
+            if (!AgendaHasPlan)
+            {
+                return "Not set up yet";
+            }
+
+            var remaining = DayPlan.RemainingToday(_plan, TimeOnly.FromDateTime(DateTime.Now));
             return remaining switch
             {
                 0 => "Nothing left today",
@@ -637,23 +646,26 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
-    private IReadOnlyList<PlanEntry> CurrentPlan()
-    {
-        var fromFile = _agenda.GetPlan();
-        return fromFile.Count > 0 ? fromFile : DayPlan.Sample;
-    }
+    public string AgendaEmptyHint =>
+        $"Add a line like \"14:00 Design review\" to {AgendaService.DefaultPath} and it appears here.";
 
     public void RefreshAgenda()
     {
-        var (upcoming, _) = DayPlan.Split(CurrentPlan(), TimeOnly.FromDateTime(DateTime.Now));
+        _plan = _agenda.GetPlan();
+        var (upcoming, _) = DayPlan.Split(_plan, TimeOnly.FromDateTime(DateTime.Now));
 
         UpNext.Clear();
+
+        // Empty means empty: the card invites the user to write the file rather than
+        // pretending a sample schedule is theirs.
         foreach (var entry in upcoming.Take(4))
         {
             UpNext.Add(entry with { Time = DayPlan.FormatClock(entry.Time) });
         }
 
+        Raise(nameof(AgendaHasPlan));
         Raise(nameof(AgendaCountLabel));
+        Raise(nameof(AgendaEmptyHint));
         Raise(nameof(UpNext));
     }
 

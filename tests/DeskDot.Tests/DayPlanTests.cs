@@ -123,13 +123,4 @@ public class DayPlanTests
     {
         Assert.Null(DayPlan.ParseClock(text));
     }
-
-    [Fact]
-    public void Sample_plan_is_ordered_and_parseable()
-    {
-        Assert.NotEmpty(DayPlan.Sample);
-        var times = DayPlan.Sample.Select(entry => DayPlan.ParseClock(entry.Time)).ToList();
-        Assert.All(times, time => Assert.NotNull(time));
-        Assert.Equal(times.OrderBy(time => time), times);
-    }
 }

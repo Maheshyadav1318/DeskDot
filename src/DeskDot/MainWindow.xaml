@@ -14,6 +14,7 @@
 
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    <local:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
 
     <!-- Week bars bind a 0..1 ratio; the ProgressBar style expects 0..100. -->
     <local:RatioToPercentConverter x:Key="PercentToValue" />
@@ -316,8 +317,9 @@
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
 
-              <TextBlock Text="A little breathing room in between." Style="{StaticResource CardCaption}"
-                         Margin="0,2,0,0" />
+              <TextBlock Text="{Binding AgendaEmptyHint}" Style="{StaticResource CardCaption}"
+                         TextWrapping="Wrap" Margin="0,4,0,0"
+                         Visibility="{Binding AgendaHasPlan, Converter={StaticResource InverseBoolToVis}}" />
             </StackPanel>
           </Border>
 

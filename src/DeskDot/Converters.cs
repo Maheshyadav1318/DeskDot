@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 
 namespace DeskDot;
@@ -16,4 +17,14 @@ public sealed class RatioToPercentConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         value is double percent ? percent / 100 : 0d;
+}
+
+/// <summary>Shows an element only when the bound flag is false (empty states).</summary>
+public sealed class InverseBoolToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is true ? Visibility.Collapsed : Visibility.Visible;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is not Visibility.Visible;
 }

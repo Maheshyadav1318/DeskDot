@@ -6,17 +6,15 @@ namespace DeskDot.Services;
 /// <summary>
 /// Supplies the "Up next" card from <c>%APPDATA%\DeskDot\agenda.txt</c>. Parsing and the
 /// "what's next" decision live in <see cref="DayPlan"/> (pure and unit tested); this class
-/// only does file IO. An empty result means the caller should use its own sample plan.
+/// only does file IO. An empty result means the user has not written an agenda yet, and the
+/// dashboard says so instead of inventing entries.
 /// </summary>
 public sealed class AgendaService
 {
     private readonly string _agendaPath;
 
     public AgendaService()
-        : this(Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "DeskDot",
-            "agenda.txt"))
+        : this(DefaultPath)
     {
     }
 
@@ -27,6 +25,10 @@ public sealed class AgendaService
     }
 
     public string AgendaPath => _agendaPath;
+
+    /// <summary>Where the agenda lives, for the empty-state hint.</summary>
+    public static string DefaultPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DeskDot", "agenda.txt");
 
     /// <summary>The whole plan for today, or an empty list when there is no usable file.</summary>
     public IReadOnlyList<PlanEntry> GetPlan()

@@ -14,16 +14,6 @@ public sealed record PlanEntry(string Time, string Title, string? Detail = null)
 /// </summary>
 public static class DayPlan
 {
-    /// <summary>Sample plan used when the user has not written an agenda file.</summary>
-    public static IReadOnlyList<PlanEntry> Sample { get; } = new[]
-    {
-        new PlanEntry("09:00", "A gentle start", "Inbox, coffee, no rush"),
-        new PlanEntry("11:30", "Design catch-up", "30 min · Product design"),
-        new PlanEntry("14:00", "A little focus time", "Make room for deep work"),
-        new PlanEntry("16:00", "Walk outside", "15 min · A little fresh air"),
-        new PlanEntry("17:30", "Wrap up & notes", "Close the loops")
-    };
-
     /// <summary>
     /// Parses lines of the form <c>HH:mm Title</c> or <c>HH:mm Title | detail</c>.
     /// Blank lines and <c>#</c> comments are ignored; invalid times are skipped.
