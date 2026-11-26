@@ -13,7 +13,7 @@ public sealed class TrayService : IDisposable
     private readonly bool _ownsIcon;
     private bool _disposed;
 
-    public TrayService(Action openSettings, Action toggleIsland, Action exit)
+    public TrayService(Action openSettings, Action toggleWindow, Action exit)
     {
         (_icon, _ownsIcon) = LoadIcon();
 
@@ -21,7 +21,7 @@ public sealed class TrayService : IDisposable
         {
             ShowImageMargin = false
         };
-        menu.Items.Add(new WinForms.ToolStripMenuItem("Show / hide DeskDot", null, (_, _) => toggleIsland()));
+        menu.Items.Add(new WinForms.ToolStripMenuItem("Show / hide DeskDot", null, (_, _) => toggleWindow()));
         menu.Items.Add(new WinForms.ToolStripMenuItem("Settings…", null, (_, _) => openSettings()));
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(new WinForms.ToolStripMenuItem("Exit DeskDot", null, (_, _) => exit()));
@@ -38,7 +38,7 @@ public sealed class TrayService : IDisposable
         {
             if (args.Button == WinForms.MouseButtons.Left)
             {
-                toggleIsland();
+                toggleWindow();
             }
         };
         _notifyIcon.DoubleClick += (_, _) => openSettings();

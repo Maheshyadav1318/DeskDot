@@ -9,7 +9,7 @@ namespace DeskDot;
 public partial class App : Application
 {
     private const string MutexName = @"Local\DeskDot.SingleInstance";
-    private const string ShowEventName = @"Local\DeskDot.ShowIsland";
+    private const string ShowEventName = @"Local\DeskDot.ShowDashboard";
 
     private static SettingsService? _settingsService;
     private Mutex? _instanceMutex;

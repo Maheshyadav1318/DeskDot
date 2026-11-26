@@ -4,7 +4,7 @@ using DeskDot.Core;
 namespace DeskDot.Services;
 
 /// <summary>
-/// Registers a system-wide hotkey on the island window and raises <see cref="Pressed"/>.
+/// Registers a system-wide hotkey on the dashboard window and raises <see cref="Pressed"/>.
 /// String parsing/formatting is delegated to <see cref="HotkeyGesture"/>; this class only
 /// touches Win32, so it can re-register after sleep/resume or a settings change.
 /// </summary>

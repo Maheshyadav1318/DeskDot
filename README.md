@@ -19,7 +19,7 @@ Designed &amp; Developed by **D.R.M.Y.** ✨
 </div>
 
 <p align="center">
-  <img src="src/DeskDot/Assets/dashboard-hero.jpg" width="720" alt="A calm landscape — the feeling DeskDot is going for" />
+  <img src="docs/screenshots/dashboard.png" width="900" alt="The DeskDot dashboard: focus timer, weather, system stats, screen time, a reminder, clipboard, agenda, notes and the module strip" />
 </p>
 
 ---
@@ -69,29 +69,6 @@ Eight small modules on one page. Each one can be switched off in **Setup → Mod
 Plus a **reminder** card that rotates through a few quiet lines, a **module manager** showing
 all eight, and two global hotkeys. The page reflows when a module is switched off, so what is
 left gets the room.
-
-### The whole window
-
-```
-  DeskDot   ·   A little space. A better day.                       Modules  Setup  Hide
-╭──────────────────────────────────────────────────────────────────────────────────────╮
-│  A LITTLE FOCUS                       ╭───────────────╮   ╭────── THIS PC · LIVE ────╮
-│                                       │  Your city    │   │ CPU        12%           │
-│  25:00                                │  18°  Partly  │   │ MEMORY     46%           │
-│  One thing at a time   [Start focus]  │  cloudy       │   │ BATTERY    100% Charging │
-│  Good morning                         │  H 21° L 13°  │   │ No drivers · no admin    │
-│                                       ╰───────────────╯   ╰──────────────────────────╯
-│  ╭── SCREEN TIME ────────╮  ╭── A LITTLE REMINDER ──────────────────────────────────╮
-│  │ 2h 34m   12% vs yest. │  │ "You don't have to do it all. Just the next right      │
-│  │ M T W T F S S         │  │  thing."                          [Another] [Notes]     │
-│  │ Chrome 1h 12m         │  ╰────────────────────────────────────────────────────────╯
-│  ╰───────────────────────╯  ╭── CLIPBOARD ──╮  ╭── AGENDA ──────╮  ╭── NOTES ───────╮
-│                             │ "Make room…"  │  │ 11:30 Design…  │  │ Groceries      │
-│                             │ 2 min ago     │  │ 14:00 Focus    │  │ milk, oats     │
-│                             ╰───────────────╯  ╰────────────────╯  ╰────────────────╯
-│  YOUR MODULES · 8 little helpers            Toggle Ctrl+Alt+D  ·  Setup Ctrl+,          │
-╰──────────────────────────────────────────────────────────────────────────────────────╯
-```
 
 ---
 
@@ -193,6 +170,8 @@ src/DeskDot/
 tests/DeskDot.Tests/   166 xunit tests over Core/Models/Services
 installer/DeskDot.iss   Inno Setup script (per-user, no elevation)
 scripts/build.ps1      one-command release build
+tools/render-dashboard.py   regenerates docs/screenshots/dashboard.png from the palette
+                            and layout constants in MainWindow.xaml
 ```
 
 `Core/` deliberately has no WPF or Win32 dependency, so most logic is testable without a
